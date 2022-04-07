@@ -1,0 +1,12 @@
+[
+    {
+        "hostname": "example.es",
+        "user": "example-user",
+        "pass": "example-password"
+    },
+    {
+        "hostname": "example2.es",
+        "user": "example2-user",
+        "pass": "example2-password"
+    }
+]
