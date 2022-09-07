@@ -28,6 +28,6 @@ COPY --from=base /install/wheels /wheels
 RUN pip install --upgrade pip && pip install --no-cache /wheels/* && rm -r /wheels
 
 # Copy code
-COPY code/ /dyndns-client
+COPY ./code/ /dyndns-client
 
 CMD ["python", "/dyndns-client/client.py"]
