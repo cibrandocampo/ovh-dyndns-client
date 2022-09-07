@@ -4,9 +4,14 @@ import logging
 from connection import execute_get
 from twisted.internet import task, reactor
 
+HOST = 'https://www.ovh.com'
+PATH = '/nic/update'
+SYS_PARAM = 'dyndns'
+
+
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.ERROR,
+    level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
@@ -43,19 +48,21 @@ def update_ip_to_ovh():
     logging.debug("update_ip_to_ovh")
     public_ip = read_ip_file()
     new_public_ip = get_public_ip()
-    logging.debug('update_ip_to_ovh - New: ' + str(new_public_ip) + ' OLD: ' + str(public_ip))
+    logging.debug(f'update_ip_to_ovh - New: {new_public_ip} OLD: {public_ip}')
 
     if public_ip and public_ip == new_public_ip:
-        logging.info("The public IP has not changed: " + public_ip)
+        logging.debug(f'The public IP has not changed')
     else:
-        logging.info("New public IP assigned: " + new_public_ip)
+        logging.info(f'New public IP assigned - New: {new_public_ip} OLD: {public_ip}')
         for domain in read_domains_configuration():
-            logging.info("Updating ip for hostname: " + domain['hostname'])
-            url = "https://www.ovh.com/nic/update?system=dyndns&hostname="
-            url += domain['hostname'] + "&myip=" + new_public_ip
+            logging.debug(f'Updating ip for hostname: {domain["hostname"]}')
+
+            url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={domain["hostname"]}&myip={new_public_ip}'
             auth = {'user': domain['user'], 'pass': domain['pass']}
+
             response = execute_get(url, auth)
-            logging.info("Updated ip for hostname: " + domain['hostname'] + " with reponse: " + response)
+
+            logging.info(f'Updated ip for hostname: {domain["hostname"]} with reponse: {response}')
 
         update_ip_file(new_public_ip)
 
