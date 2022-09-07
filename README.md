@@ -1,6 +1,6 @@
-# Dockerized DynDNS update client for OVH domains
+# DynDNS updater for OVH
 
-Dockerized client that allows you to maintain an OVH domain pointing to a dynamic IP.
+Dockerized client that allows maintain an OVH domain pointing to a dynamic IP.
 
 ## DockerHub image
 
@@ -12,6 +12,7 @@ The DynDNS image is published in DockerHub: https://hub.docker.com/repository/do
 
 - Step 2: Create a user that allows you to manage it (username and password).
 
+Official OVH documentation: https://docs.ovh.com/gb/en/domains/hosting_dynhost/
 
 ## Build image
 
@@ -54,3 +55,11 @@ Next, the docker can be executed by providing the previously created file.
 ```sh
 docker run -v path/to/domains.json:/dyndns-client/config/domains.json docker push cibrandocampo/ovh-dyndns-client:1.0.0
 ```
+
+## Help
+
+Send me an email (hello@cibran.es) if you need extra help.
+
+## License
+
+GNU GENERAL PUBLIC LICENSE
