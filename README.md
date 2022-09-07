@@ -4,8 +4,9 @@ Dockerized client that allows you to maintain an OVH domain pointing to a dynami
 
 ## Configuring OVH
 
-1. The first step is to configure DynDNS in the OVH administration panel.
-2. Do not forget to create a user that allows you to manage it (username and password)
+- Step 1: Configure a DynDNS in the OVH administration panel.
+
+- Step 2: Create a user that allows you to manage it (username and password).
 
 ## Execution
 Before running the container, we must create a JSON file with the domain configuration.
