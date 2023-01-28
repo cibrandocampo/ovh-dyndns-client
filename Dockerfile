@@ -1,6 +1,6 @@
 ## Stage 1 - Install requirements ##
 
-FROM python:3.10-alpine as base
+FROM python:3.11-alpine as base
 
 # Update pip
 RUN pip install --upgrade pip
@@ -15,7 +15,7 @@ RUN pip wheel --no-cache-dir --wheel-dir /install/wheels -r /install/requirement
 
 ## Stage 2 - Image creation ##
 
-FROM python:3.10-alpine
+FROM python:3.11-alpine
 
 # Enviroment variables
 ENV API_PUBLIC_IP_URL=https://api.ipify.org
