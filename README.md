@@ -16,7 +16,7 @@ Official OVH documentation: https://docs.ovh.com/gb/en/domains/hosting_dynhost/
 
 ## Build image
 
-`docker build -t ovh-dyndns-client:latest -f Dockerfile .`
+`docker build -t ovh-dyndns-client:stable -f Dockerfile .`
 
 
 ## Enviroment variables
@@ -53,7 +53,7 @@ NOTE: There is an example file in /config
 Next, the docker can be executed by providing the previously created file.
 
 ```sh
-docker run -v path/to/domains.json:/dyndns-client/config/domains.json docker push cibrandocampo/ovh-dyndns-client:1.0.0
+docker run -v path/to/domains.json:/dyndns-client/config/domains.json cibrandocampo/ovh-dyndns-client:stable
 ```
 
 ## Help
