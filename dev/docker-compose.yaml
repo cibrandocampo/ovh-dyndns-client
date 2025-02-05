@@ -1,0 +1,19 @@
+name: ovh-dyndns
+services:
+  ovh-dyndns:
+    container_name: ovh_dyndns
+    image: ovh_dyndns:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: tail -f /dev/null
+    environment:
+      PYTHONPATH: /app
+      GEVENT_SUPPORT: True
+      PYTHONDONTWRITEBYTECODE: 1
+    env_file:
+      - .env
+    volumes:
+      - ../src/:/app
+    network_mode: host

@@ -1,33 +1,22 @@
 ## Stage 1 - Install requirements ##
+FROM python:3.13-alpine AS base
 
-FROM python:3.12-alpine as base
+WORKDIR /install
 
-# Update pip
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip \
+    && mkdir -p /install/wheels
 
-# Copy installation files
-COPY ./install /install
-
-# Install packages as wheels
-RUN pip wheel --no-cache-dir --wheel-dir /install/wheels -r /install/requirements.txt
-
-
+COPY requirements.txt .
+RUN pip wheel --no-cache-dir --wheel-dir /install/wheels -r requirements.txt
 
 ## Stage 2 - Image creation ##
+FROM python:3.13-alpine
 
-FROM python:3.12-alpine
+WORKDIR /app
 
-# Enviroment variables
-ENV API_PUBLIC_IP_URL=https://api.ipify.org
-ENV PUBLIC_IP_FILE_PATH=/tmp/current_ip
-ENV DOMAINS_CONFIG_FILE_PATH=/dyndns-client/config/domains.json
-ENV UPDATE_INTERVAL=300
-
-# Install compiled packages
 COPY --from=base /install/wheels /wheels
-RUN pip install --upgrade pip && pip install --no-cache /wheels/* && rm -r /wheels
+RUN pip install --no-cache /wheels/* && rm -r /wheels
 
-# Copy code
-COPY ./code/ /dyndns-client
+COPY ./src /app
 
-CMD ["python", "/dyndns-client/client.py"]
+ENTRYPOINT ["python", "main.py"]
