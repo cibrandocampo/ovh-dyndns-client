@@ -1,8 +1,8 @@
-name: ovh-dyndns-client
+name: ovh-dyndns
 services:
-  ovh-dyndns-client:
-    container_name: ovh_dyndns_client
-    image: ovh_dyndns_client:dev
+  ovh-dyndns:
+    container_name: ovh_dyndns
+    image: ovh_dyndns:dev
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,6 +12,8 @@ services:
       PYTHONPATH: /app
       GEVENT_SUPPORT: True
       PYTHONDONTWRITEBYTECODE: 1
+    env_file:
+      - .env
     volumes:
       - ../src/:/app
     network_mode: host

@@ -1,5 +1,3 @@
-configparser
 ipify-py
 requests
 schedule
-twisted
