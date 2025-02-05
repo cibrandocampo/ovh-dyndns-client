@@ -14,14 +14,15 @@ class UpdateDnsController:
         
         try:
             ip = self.ipify_client.get_public_ip()           
-            if ip != self.config.get('current', 'ip'):
-                self.logger.info("New public IP, must be updated to DynDNS update process")
-                self.config.set('current', 'ip', ip)
+            if ip == self.config.ip:
+                self.logger.info("IP has not changed since the last notification to providers")
+            else:
+                self.logger.info("New public IP, must be updated to providers")
+                self.config.set_ip(new_ip=ip)
 
-                for host in self.config.get_hosts_config():
+                for host in self.config.hosts_config:
                     ovh_client = OvhClient(host=host)
                     ovh_client.update_ip(ip)
-            # self.logger.info("DynDNS updated successfully")
 
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")

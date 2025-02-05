@@ -33,12 +33,11 @@ if __name__ == "__main__":
     
     execute_main_controller()
     
-    execution_interval = config.get('system_settings', 'check_interval')
-    logger.info(f"Configuring Scheduler to execute controller every {execution_interval} minutes")
-    schedule.every(execution_interval).minutes.do(execute_main_controller)
+    logger.info(f"Configuring Scheduler to execute controller every {config.update_ip_interval} seconds")
+    schedule.every(config.update_ip_interval).seconds.do(execute_main_controller)
     logger.info("Scheduler service configured.")
 
     # Run the scheduler in an infinite loop
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(10)

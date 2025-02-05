@@ -1,109 +1,116 @@
+import json
 import os
-import configparser
+from functools import lru_cache
 from domain.hostconfig import HostConfig
-from threading import Lock
 
-CONFIG_FILE_PATH = os.environ.get('DEFAULT_CONFIG_FILE_PATH', 'ovh-dyndns.config')
-
+DEFAULT_UPDATE_INTERVAL = 300
+DEFAULT_HOST_FILE_PATH = "/app/hosts.json" # Config from Docker compose volume
+REQUIRED_HOST_KEYS = {"hostname", "username", "password"}
 
 class Config:
     """
-    A thread-safe Singleton class for managing application configuration.
+    Singleton Configuration class responsible for handling environment variables, 
+    retrieving the host configuration, and providing logger settings.
     """
-    _instance = None
-    _lock = Lock()
 
-    def __new__(cls, config_file=CONFIG_FILE_PATH) -> 'Config':
+    _instance = None  # Singleton instance
+
+    def __new__(cls, *args, **kwargs):
         """
-        Ensure only one instance of the Config class is created (Singleton pattern).
+        Ensures only one instance of Config is created.
+        If an instance already exists, it returns the existing one.
+
+        Returns:
+            Config: The singleton instance of Config.
         """
         if not cls._instance:
-            with cls._lock:
-                if not cls._instance:  # Double-checked locking
-                    cls._instance = super().__new__(cls)
-                    cls._instance._initialize(config_file)
+            cls._instance = super().__new__(cls)
+            cls._instance._initialize()  # Initialize only once
         return cls._instance
 
-    def _initialize(self, config_file) -> None:
+    def _initialize(self):
         """
-        Initialize the Config instance, reading the configuration file.
-        
-        :param config_file: The path to the configuration file.
+        Initializes the configuration class.
+        This method runs only once per instance creation.
         """
-        from infrastructure.logger import Logger
-        self.logger = Logger().get_logger()
-        self.config = configparser.ConfigParser()
-        try:
-            self.config.read(config_file)
-            self.logger.info(f"Configuration file '{config_file}' loaded successfully.")
-        except Exception as e:
-            self.logger.error(f"Failed to load configuration file '{config_file}': {e}")
+        self.host_file_path = DEFAULT_HOST_FILE_PATH
+        self._hosts_config = None
+        self._ip = None
 
-    def get_section(self, section, fallback=None):
-        """Retrieves all options from a specific section."""
-        try:
-            options = dict(self.config.items(section))
-            self.logger.debug(f"Retrieved section '{section}': {options}")
-            return options
-        except configparser.NoSectionError:
-            self.logger.warning(f"Section '{section}' not found. Returning fallback: {fallback}")
-            return fallback
+    @property
+    def ip(self) -> str:
+        """
+        Retrieves the stored IP address.
 
-    def get(self, section, option, fallback=None):
-        """Retrieves the value of a specific option from a section."""
-        try:
-            value = self.config.get(section, option)
-            self.logger.debug(f"Retrieved '{option}' from section '{section}': {value}")
-            return value
-        except configparser.NoSectionError:
-            self.logger.warning(f"Section '{section}' not found. Returning fallback for '{option}': {fallback}")
-            return fallback
-        except configparser.NoOptionError:
-            self.logger.warning(f"Option '{option}' not found in section '{section}'. Returning fallback: {fallback}")
-            return fallback
-
-    def get_hosts_config(self) -> list:
-        """Retrieve a list of HostConfig objects from the configuration."""
-        hosts = []
-        for section in self.config.sections():
-            if section.startswith('hostconfig'):
-                try:
-                    host = HostConfig(
-                        hostname=self.config.get(section=section, option='hostname'),
-                        username=self.config.get(section=section, option='username'),
-                        password=self.config.get(section=section, option='password')
-                    )
-                    hosts.append(host)
-                    self.logger.debug(f"Host config loaded from section '{section}': {host}")
-                except (configparser.NoOptionError, ValueError) as e:
-                    self.logger.error(f"Failed to load host config from section '{section}': {e}")
-        self.logger.info(f"Loaded {len(hosts)} host configurations.")
-        return hosts
-
-    def set(self, section, option, value):
-        """Sets a value for a specific option in a section."""
-        if not self.config.has_section(section):
-            self.config.add_section(section)
-            self.logger.info(f"Section '{section}' created.")
-        self.config.set(section, option, value)
-        self.logger.debug(f"Set '{option}' in section '{section}' to '{value}'.")
-
-    def save(self, config_file):
-        """Saves the current configuration to the specified file."""
-        try:
-            with open(config_file, 'w') as configfile:
-                self.config.write(configfile)
-            self.logger.info(f"Configuration saved to '{config_file}'.")
-        except Exception as e:
-            self.logger.error(f"Failed to save configuration to '{config_file}': {e}")
+        Returns:
+            str: The current IP address.
+        """
+        return self._ip
     
-    @classmethod
-    def get_config(cls, config_file=CONFIG_FILE_PATH) -> 'Config':
+    def set_ip(self, new_ip: str) -> None:
         """
-        Returns the Singleton instance of the Config class.
+        Updates the stored IP address.
+
+        Args:
+            new_ip (str): The new IP address to store.
         """
-        return cls(config_file)
+        self._ip = new_ip
 
+    @property
+    def logger_config(self) -> tuple:
+        """
+        Retrieves the logger configuration from environment variables.
 
-# Usage
-#config_instance = Config()
+        Returns:
+            tuple: A tuple containing (logger_name, logger_level).
+        """
+        return (
+            os.getenv("LOGGER_NAME", "ovh-dydns"),
+            os.getenv("LOGGER_LEVEL", "INFO").upper(),
+        )
+
+    @property
+    def update_ip_interval(self) -> int:
+        """
+        Retrieves the interval for updating the IP address from the environment variable.
+        If the value is not a valid integer, it defaults to `DEFAULT_UPDATE_INTERVAL`.
+
+        Returns:
+            int: The update interval in seconds.
+        """
+        update_ip_interval = os.getenv("UPDATE_INTERVAL", DEFAULT_UPDATE_INTERVAL)
+        try:
+            return int(update_ip_interval)
+        except ValueError:
+            return DEFAULT_UPDATE_INTERVAL
+
+    @property
+    def hosts_config(self) -> list:
+        """
+        Retrieves the list of host configurations.
+        The configuration is loaded once and cached in `_hosts_config`.
+
+        Returns:
+            list: A list of `HostConfig` objects.
+        """
+        if self._hosts_config is None:
+            self._hosts_config = self.get_hosts_config()
+        return self._hosts_config
+
+    @lru_cache(maxsize=1)
+    def get_hosts_config(self) -> list:
+        """
+        Loads and parses the hosts configuration file.
+        Only hosts containing the required keys (`REQUIRED_HOST_KEYS`) are included.
+
+        Returns:
+            list: A list of `HostConfig` objects parsed from the JSON file.
+        """
+        with open(self.host_file_path, "r", encoding="utf-8") as f:
+            raw_hosts_config = json.load(f)
+
+        return [
+            HostConfig.from_dict(host_config)
+            for host_config in raw_hosts_config
+            if REQUIRED_HOST_KEYS <= host_config.keys()
+        ]

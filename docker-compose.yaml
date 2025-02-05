@@ -1,0 +1,12 @@
+services:
+  ovh-dyndns:
+    container_name: ovh_dyndns
+    image: ovh_dyndns:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ${HOSTS_CONFIG_FILE_PATH}:/app/hosts.json

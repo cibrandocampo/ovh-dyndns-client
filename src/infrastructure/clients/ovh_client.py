@@ -5,6 +5,10 @@ from domain.hostconfig import HostConfig
 from infrastructure.config import Config
 from infrastructure.logger import Logger
 
+HOST = "https://www.ovh.com"
+PATH = "/nic/update"
+SYS_PARAM = "dyndns"
+
 
 class OvhClient:
     """
@@ -34,6 +38,7 @@ class OvhClient:
         Returns:
             HTTPBasicAuth: An authentication object for making API requests.
         """
+        self.logger.info(f'{self.host.hostname} | Getting basic auth for: {self.host.username}')
         return HTTPBasicAuth(username=self.host.username, password=self.host.password)
 
     def update_ip(self, new_public_ip: str) -> str:
@@ -49,19 +54,17 @@ class OvhClient:
         Raises:
             RuntimeError: If the IP update request fails.
         """
-        self.logger.debug(f'Updating IP for hostname: {self.host.hostname}')
-
-        host = self.config.get('ovh_config', 'HOST')
-        path = self.config.get('ovh_config', 'PATH')
-        sys_param = self.config.get('ovh_config', 'SYS_PARAM')
-
-        url = f'{host}{path}?system={sys_param}&hostname={self.host.hostname}&myip={new_public_ip}'
+        url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={self.host.hostname}&myip={new_public_ip}'
 
         try:
+            self.logger.info(f'{self.host.hostname} | Requesting update ip | URL: {url}')
+
             response = requests.get(url, auth=self.auth)
-            response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
+            if not response.ok:
+                response.raise_for_status()
             
-            self.logger.info(f'Successfully updated IP for hostname: {self.host.hostname} with response: {response.text}')
+            self.logger.info(f'{self.host.hostname} | Successfully updated IP ({new_public_ip})')
+            self.logger.debug(f'{self.host.hostname} | Response: {response.status_code} - {response.text}')
             return response.content.decode('utf8')
         
         except requests.RequestException as e:
