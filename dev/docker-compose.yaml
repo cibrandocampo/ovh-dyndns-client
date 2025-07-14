@@ -12,8 +12,6 @@ services:
       PYTHONPATH: /app
       GEVENT_SUPPORT: True
       PYTHONDONTWRITEBYTECODE: 1
-    env_file:
-      - .env
     volumes:
       - ../src/:/app
     network_mode: host
