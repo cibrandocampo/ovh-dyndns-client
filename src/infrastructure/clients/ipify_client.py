@@ -1,15 +1,32 @@
 import ipify
-
+from pydantic import IPvAnyAddress
 from infrastructure.logger import Logger
 
 
 class IpifyClient:
+    """
+    Client for retrieving the current public IP address using the ipify service.
+    """
+
     def __init__(self):
+        """
+        Initializes the IpifyClient with a logger instance.
+        """
         self.logger = Logger().get_logger()
 
-    def get_public_ip(self) -> str:
+    def get_public_ip(self) -> IPvAnyAddress:
+        """
+        Fetches and validates the current public IP address.
+
+        Returns:
+            IPvAnyAddress: A validated IP address (IPv4 or IPv6).
+
+        Raises:
+            RuntimeError: If the IP could not be retrieved or is invalid.
+        """
         try:
-            ip = ipify.get_ip()
+            ip_str = ipify.get_ip()
+            ip = IPvAnyAddress(ip_str)
             self.logger.info(f"Retrieved public IP: {ip}")
             return ip
         except Exception as e:

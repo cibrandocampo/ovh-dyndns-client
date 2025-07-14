@@ -13,7 +13,7 @@ class UpdateDnsController:
         self.logger.info("Starting DynDNS update process")
         
         try:
-            ip = self.ipify_client.get_public_ip()           
+            ip = self.ipify_client.get_public_ip()
             if ip == self.config.ip:
                 self.logger.info("IP has not changed since the last notification to providers")
             else:
