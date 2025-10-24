@@ -28,9 +28,9 @@ jobs:
         with:
           images: cibrandocampo/ovh-dyndns-client
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=stable,enable={{is_release}}
-            type=ref,event=tag,enable={{is_release}}
+            type=raw,value=latest
+            type=raw,value=stable
+            type=ref,event=tag
       
       - name: Build Docker image
         uses: docker/build-push-action@v5
