@@ -19,11 +19,20 @@ class Config:
     - IP state
     - Host config loading and validation
     """
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Config, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self):
-        self.host_file_path = DEFAULT_HOST_FILE_PATH
-        self._hosts_config = None
-        self._ip = None
+        # Only initialize once
+        if not hasattr(self, '_initialized'):
+            self.host_file_path = DEFAULT_HOST_FILE_PATH
+            self._hosts_config = None
+            self._ip = None
+            self._initialized = True
 
     @property
     def ip(self) -> str:
@@ -56,7 +65,8 @@ class Config:
         try:
             return int(raw_value)
         except ValueError:
-            self.logger.warning(f"Invalid UPDATE_INTERVAL: {raw_value}, using default {DEFAULT_UPDATE_INTERVAL}")
+            # Use print instead of logger to avoid circular dependency
+            print(f"Warning: Invalid UPDATE_INTERVAL: {raw_value}, using default {DEFAULT_UPDATE_INTERVAL}")
             return DEFAULT_UPDATE_INTERVAL
 
     @property

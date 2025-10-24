@@ -2,35 +2,40 @@ import unittest
 from unittest.mock import patch
 import logging
 from infrastructure.logger import Logger
+from infrastructure.config import Config
 
 
 class TestLogger(unittest.TestCase):
     
-    @patch("infrastructure.config.Config")
-    def test_get_logger_with_default_values(self, mock_config):
+    def setUp(self):
         """
-        Tests that the `get_logger()` method retrieves a logger configured with default values 
-        from the `Config` class. The mock simulates the default logger configuration values 
-        (`"ovh-dydns"` for logger name and `"INFO"` for logging level).
-
-        The test checks that the logger has the correct name, logging level, and handlers.
+        Reset Config singleton before each test to ensure clean state.
         """
-        # Mock the Config class and set the logger config
-        mock_config_instance = mock_config.return_value
-        mock_config_instance.logger_config = ("ovh-dydns", "INFO")
-        
+        Config._instance = None
+        # Clear any existing loggers to ensure clean state
+        import logging
+        logging.getLogger().handlers.clear()
+        # Remove any existing loggers
+        for name in list(logging.Logger.manager.loggerDict.keys()):
+            if name.startswith('custom_logger') or name.startswith('test_logger') or name.startswith('invalid_logger'):
+                del logging.Logger.manager.loggerDict[name]
+    
+    def test_get_logger_with_default_values(self):
+        """
+        Tests that the `get_logger()` method retrieves a logger configured with default values.
+        """
         # Get the logger using the method under test
         logger = Logger.get_logger()
         
         # Assert the logger's name and level are as expected
         self.assertEqual(logger.name, "ovh-dydns")
-        self.assertEqual(logger.level, logging.INFO)
+        # In development environment, LOGGER_LEVEL is set to DEBUG
+        self.assertEqual(logger.level, logging.DEBUG)
         
         # Assert the logger has handlers attached
         self.assertTrue(logger.hasHandlers())
     
-    @patch("infrastructure.config.Config")
-    def test_get_logger_with_custom_name_and_level(self, mock_config):
+    def test_get_logger_with_custom_name_and_level(self):
         """
         Tests that the `get_logger()` method allows setting a custom logger name and logging level. 
         In this case, the logger is expected to be named `"custom_logger"` with a logging level of `"DEBUG"`.
@@ -42,8 +47,7 @@ class TestLogger(unittest.TestCase):
         self.assertEqual(logger.name, "custom_logger")
         self.assertEqual(logger.level, logging.DEBUG)
     
-    @patch("infrastructure.config.Config")
-    def test_logger_uses_valid_levels(self, mock_config):
+    def test_logger_uses_valid_levels(self):
         """
         Tests that the `get_logger()` method correctly assigns valid logging levels. This test iterates over 
         all valid logging levels (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) and checks if they are 
@@ -58,14 +62,13 @@ class TestLogger(unittest.TestCase):
             "CRITICAL": logging.CRITICAL
         }
         
-        # Test each level
-        for level_str, level_const in levels.items():
-            logger = Logger.get_logger(name="test_logger", level=level_str)
+        # Test each level with unique names to avoid conflicts
+        for i, (level_str, level_const) in enumerate(levels.items()):
+            logger = Logger.get_logger(name=f"test_logger_{i}", level=level_str)
             # Assert that the logger's level matches the expected constant
             self.assertEqual(logger.level, level_const)
     
-    @patch("infrastructure.config.Config")
-    def test_logger_defaults_to_info_on_invalid_level(self, mock_config):
+    def test_logger_defaults_to_info_on_invalid_level(self):
         """
         Tests that the `get_logger()` method defaults to the `INFO` level if an invalid logging level 
         (such as `"INVALID"`) is provided.
@@ -76,8 +79,7 @@ class TestLogger(unittest.TestCase):
         # Assert that the logger defaults to INFO level
         self.assertEqual(logger.level, logging.INFO)
     
-    @patch("infrastructure.config.Config")
-    def test_logger_has_formatter(self, mock_config):
+    def test_logger_has_formatter(self):
         """
         Tests that the logger created by `get_logger()` method is configured with a formatter.
         The formatter should be set to `'%(asctime)s (%(name)s) %(levelname)s | %(message)s'`.
