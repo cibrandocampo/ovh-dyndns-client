@@ -55,8 +55,9 @@ Create a `docker-compose.yaml` file:
 services:
   ovh-dyndns-client:
     image: cibrandocampo/ovh-dyndns-client:${DOCKER_OVH_VERSION:-stable}
-    container_name: "${PROJECT_NAME:-dyndns-client}"
+    container_name: "${PROJECT_NAME:-ovh-dyndns-client}"
     restart: always
+    init: true
     env_file:
       - .env
     volumes:
@@ -69,10 +70,10 @@ Create a `.env` file with the following configuration:
 
 ```ini
 # Project
-PROJECT_NAME=ovh-dyndns
+PROJECT_NAME=ovh-dyndns-client
 
 # Docker version
-DOCKER_OVH_VERSION=2.0.0
+DOCKER_OVH_VERSION=stable
 
 # General config
 HOSTS_CONFIG_FILE_PATH=/volume1/docker/network/dyndns/volumes/hosts.json
@@ -95,6 +96,8 @@ docker-compose up -d
 
 | Variable | Default Value | Description |
 |----------|---------------|-------------|
+| `PROJECT_NAME` | `ovh-dyndns-client` | Container name for the application |
+| `DOCKER_OVH_VERSION` | `stable` | Docker image version to use |
 | `HOSTS_CONFIG_FILE_PATH` | `/app/hosts.json` | Path to the JSON configuration file containing the host details |
 | `UPDATE_INTERVAL` | `300` (seconds) | Interval in seconds to check and update the IP |
 | `LOGGER_NAME` | `ovh-dydns` | Name of the logger for the application |

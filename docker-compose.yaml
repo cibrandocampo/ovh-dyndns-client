@@ -1,11 +1,9 @@
 services:
-  ovh-dyndns:
-    container_name: ovh_dyndns
-    image: ovh_dyndns:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+  ovh-dyndns-client:
+    image: cibrandocampo/ovh-dyndns-client:${DOCKER_OVH_VERSION:-stable}
+    container_name: "${PROJECT_NAME:-ovh-dyndns-client}"
+    restart: always
+    init: true
     env_file:
       - .env
     volumes:
