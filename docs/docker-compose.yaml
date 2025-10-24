@@ -1,9 +1,0 @@
-services:
-  ovh-dyndns-client:
-    image: cibrandocampo/ovh-dyndns-client:${DOCKER_OVH_VERSION:-stable}
-    container_name: "${PROJECT_NAME:-dyndns-client}"
-    restart: always
-    env_file:
-      - .env
-    volumes:
-      - ${HOSTS_CONFIG_FILE_PATH}:/app/hosts.json

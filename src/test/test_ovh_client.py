@@ -4,6 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from domain.hostconfig import HostConfig
 from infrastructure.clients.ovh_client import OvhClient
+from infrastructure.config import Config
 
 
 class TestOvhClient(unittest.TestCase):
@@ -14,6 +15,9 @@ class TestOvhClient(unittest.TestCase):
         before each test to ensure that the tests have a consistent environment and 
         do not rely on external resources or state.
         """
+        # Reset Config singleton to ensure clean state
+        Config._instance = None
+        
         self.mock_host = HostConfig(hostname="example.com", username="user", password="pass")
         self.client = OvhClient(self.mock_host)
     

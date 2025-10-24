@@ -1,7 +1,7 @@
-name: ovh-dyndns
+name: ovh-dyndns-dev
 services:
-  ovh-dyndns:
-    container_name: ovh_dyndns
+  ovh-dyndns-dev:
+    container_name: ovh_dyndns_dev
     image: ovh_dyndns:dev
     build:
       context: .
@@ -12,6 +12,14 @@ services:
       PYTHONPATH: /app
       GEVENT_SUPPORT: True
       PYTHONDONTWRITEBYTECODE: 1
+      # Development environment variables
+      LOGGER_LEVEL: DEBUG
+      UPDATE_INTERVAL: 60  # Faster updates for testing
     volumes:
       - ../src/:/app
+      - ./logs:/app/logs    # Mount logs directory
+      - ./hosts.json:/app/hosts.json  # Mount hosts configuration
     network_mode: host
+    # Optional: Add port mapping for debugging
+    ports:
+      - "5678:5678"  # Debug port

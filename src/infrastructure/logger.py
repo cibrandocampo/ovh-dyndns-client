@@ -33,6 +33,10 @@ class Logger:
             logger.addHandler(console_handler)
 
             # Set the logging level, ensuring it's valid
-            logger.setLevel(logging._nameToLevel.get(level, logging.INFO))
+            try:
+                level_int = getattr(logging, level.upper(), logging.INFO)
+            except AttributeError:
+                level_int = logging.INFO
+            logger.setLevel(level_int)
 
         return logger

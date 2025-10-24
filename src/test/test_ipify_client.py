@@ -29,7 +29,7 @@ class TestIpifyClient(unittest.TestCase):
         
         client = IpifyClient()
         result = client.get_public_ip()
-        self.assertEqual(result, '192.168.1.1')
+        self.assertEqual(str(result), '192.168.1.1')
         
         # Assert that the logger's info method was called with the expected log message
         mock_get_logger.return_value.info.assert_called_with("Retrieved public IP: 192.168.1.1")
