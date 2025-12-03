@@ -7,20 +7,21 @@ from application.controller import UpdateDnsController
 
 logger = Logger.get_logger()
 config = Config()
+controller = UpdateDnsController()
 
-def execute_main_controller():
+def execute_main_controller() -> None:
     """
-    Executes the main controller logic by invoking the handler method of UpdateDnsController.
-
+    Executes the DNS update controller handler.
+    
     Catches and logs runtime errors if the controller fails to execute.
     """
     
     try:
-        logger.info("Executing UpdateDnsController handler")
-        UpdateDnsController().handler()
-        logger.info("UpdateDnsController executed successfully")
+        logger.info("Executing DNS update controller")
+        controller.handler()
+        logger.info("DNS update completed successfully")
     except RuntimeError as e:
-        logger.error(f"Failed to execute controller: {e}")
+        logger.error(f"Controller execution failed: {e}")
 
 if __name__ == "__main__":
     """
@@ -29,13 +30,13 @@ if __name__ == "__main__":
     """
     
     # Initialize logger and config
-    logger.info("Starting ovh-dyndns application")
+    logger.info("Starting OVH DynDNS client")
     
     execute_main_controller()
     
-    logger.info(f"Configuring Scheduler to execute controller every {config.update_ip_interval} seconds")
+    logger.info(f"Scheduling updates every {config.update_ip_interval} seconds")
     schedule.every(config.update_ip_interval).seconds.do(execute_main_controller)
-    logger.info("Scheduler service configured.")
+    logger.info("Scheduler configured")
 
     # Run the scheduler in an infinite loop
     while True:
