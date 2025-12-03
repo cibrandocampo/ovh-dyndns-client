@@ -28,31 +28,37 @@ class OvhClient:
 
     def _get_auth(self) -> HTTPBasicAuth:
         """
-        Returns an HTTPBasicAuth object using host credentials.
+        Creates HTTP basic authentication object from host credentials.
+        
+        Returns:
+            HTTPBasicAuth: Authentication object for OVH API requests.
         """
-        self.logger.info(f'{self.host.hostname} | Getting basic auth for: {self.host.username}')
+        self.logger.info(f'{self.host.hostname} | Authenticating as {self.host.username}')
         return HTTPBasicAuth(
             username=self.host.username,
             password=self.host.password.get_secret_value()
         )
 
-    def update_ip(self, new_public_ip: IPvAnyAddress) -> str:
+    def update_ip(self, new_public_ip: IPvAnyAddress) -> bool:
         """
-        Sends a request to OVH to update the host's public IP address.
+        Updates the host's public IP address via OVH API.
+        
+        Args:
+            new_public_ip: The new IP address to set for the hostname.
+            
+        Returns:
+            bool: True if the update was successful, False otherwise.
+                 Returns None if a request exception occurred.
         """
         url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={self.host.hostname}&myip={new_public_ip}'
 
         try:
-            self.logger.info(f'{self.host.hostname} | Updating IP | URL: {url}')
+            self.logger.info(f'{self.host.hostname} | Updating IP')
             response = requests.get(url, auth=self.auth)
-
-            if not response.ok:
-                response.raise_for_status()
-
-            self.logger.info(f'{self.host.hostname} | IP update successful ({new_public_ip})')
-            self.logger.debug(f'{self.host.hostname} | Response: {response.status_code} - {response.text}')
-            return response.content.decode('utf-8')
+            self.logger.info(f'{self.host.hostname} | Update response: {response.status_code} {response.text}')
+            
+            return response.ok
 
         except requests.RequestException as e:
             self.logger.error(f'{self.host.hostname} | IP update failed: {e}')
-            raise RuntimeError("Failed to update IP in OVH")
+            return None
