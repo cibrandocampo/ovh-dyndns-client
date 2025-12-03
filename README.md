@@ -124,20 +124,24 @@ LOGGER_LEVEL=DEBUG
 ### Normal Operation Logs
 
 ```
-2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Starting DynDNS update process
+2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Executing DNS update controller
+2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Starting DNS update process
 2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Retrieved public IP: 83.34.148.172
-2025-10-24T12:01:32+0000 (ovh-dydns) INFO | IP has not changed since the last notification to providers
-2025-10-24T12:01:35+0000 (ovh-dydns) INFO | UpdateDnsController executed successfully
+2025-10-24T12:01:32+0000 (ovh-dydns) INFO | IP unchanged, skipping update
+2025-10-24T12:01:35+0000 (ovh-dydns) INFO | DNS update completed successfully
 ```
 
 ### IP Change Logs
 
 ```
-2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Starting DynDNS update process
+2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Executing DNS update controller
+2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Starting DNS update process
 2025-10-24T12:01:32+0000 (ovh-dydns) INFO | Retrieved public IP: 83.34.148.173
-2025-10-24T12:01:32+0000 (ovh-dydns) INFO | New public IP, must be updated to providers
-2025-10-24T12:01:33+0000 (ovh-dydns) INFO | example.es | IP update successful (83.34.148.173)
-2025-10-24T12:01:35+0000 (ovh-dydns) INFO | UpdateDnsController executed successfully
+2025-10-24T12:01:32+0000 (ovh-dydns) INFO | IP changed, updating hosts
+2025-10-24T12:01:33+0000 (ovh-dydns) INFO | example.es | Authenticating as example-user
+2025-10-24T12:01:33+0000 (ovh-dydns) INFO | example.es | Updating IP
+2025-10-24T12:01:33+0000 (ovh-dydns) INFO | example.es | Update response: 200 good 83.34.148.173
+2025-10-24T12:01:35+0000 (ovh-dydns) INFO | DNS update completed successfully
 ```
 
 ## Development
