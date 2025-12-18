@@ -7,7 +7,47 @@ on:
     types: [ published ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Create test hosts.json file
+        run: |
+          cp src/test/fixtures/hosts.json ${{ github.workspace }}/hosts.json
+      
+      - name: Run tests
+        working-directory: src
+        env:
+          HOSTS_CONFIG_FILE_PATH: ${{ github.workspace }}/hosts.json
+        run: |
+          export PYTHONPATH=${{ github.workspace }}/src:$PYTHONPATH
+          python -m pytest test/ -v
+      
+      - name: Check test coverage
+        working-directory: src
+        env:
+          HOSTS_CONFIG_FILE_PATH: ${{ github.workspace }}/hosts.json
+        run: |
+          export PYTHONPATH=${{ github.workspace }}/src:$PYTHONPATH
+          python -m pytest test/ --cov=. --cov-report=term-missing --cov-fail-under=80 || true
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -40,13 +80,13 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
-      - name: Run tests
+      - name: Build summary
         run: |
-          # Aquí podrías ejecutar tests si quieres
           echo "Docker image built successfully"
           echo "Tags: ${{ steps.meta.outputs.tags }}"

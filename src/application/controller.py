@@ -51,7 +51,6 @@ class UpdateDnsController:
             hosts: List of host configurations to update.
         """
         hosts = hosts.copy()
-        print(hosts)
         self.failed_hosts.clear()
         for host in hosts:
             ovh_client = OvhClient(host=host)

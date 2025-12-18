@@ -29,7 +29,9 @@ class Config:
     def __init__(self):
         # Only initialize once
         if not hasattr(self, '_initialized'):
-            self.host_file_path = DEFAULT_HOST_FILE_PATH
+            # Allow override via environment variable for testing
+            hosts_file_path = os.getenv("HOSTS_CONFIG_FILE_PATH")
+            self.host_file_path = Path(hosts_file_path) if hosts_file_path else DEFAULT_HOST_FILE_PATH
             self._hosts_config = None
             self._ip = None
             self._initialized = True

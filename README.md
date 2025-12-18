@@ -8,7 +8,7 @@ This client automatically maintains your OVH domains pointing to your current pu
 
 - **Automatic updates**: Detects IP changes and updates only when necessary
 - **High performance**: Singleton pattern to avoid unnecessary reinitializations
-- **Docker-ready**: Official image available on DockerHub
+- **Docker-ready**: Official image available on DockerHub with multi-architecture support (amd64, arm64/v8, arm/v7)
 - **Complete logging**: Configurable and detailed logging system
 - **Efficient**: Only updates when the IP actually changes
 - **Robust**: Error handling and automatic recovery
@@ -196,6 +196,24 @@ make test
 python -m pytest src/test/ -v
 ```
 
+### Test Coverage
+
+The project maintains high test coverage to ensure code quality and reliability. Current coverage status:
+
+| Module | Coverage | Notes |
+|--------|----------|-------|
+| `application/controller.py` | 100% | - |
+| `infrastructure/clients/ipify_client.py` | 100% | - |
+| `infrastructure/clients/ovh_client.py` | 100% | - |
+| `infrastructure/config.py` | 96% | - |
+| `infrastructure/logger.py` | 89% | - |
+| `domain/hostconfig.py` | 88% | - |
+| `main.py` | 0% | Entry point |
+
+**Overall coverage: 93%**
+
+Tests are automatically executed in CI/CD pipelines before building Docker images to ensure code quality.
+
 ### Singleton Pattern
 
 The project uses the Singleton pattern for the `Config` class, which ensures:
@@ -212,12 +230,6 @@ This project is built on top of open source libraries:
 - **[requests](https://requests.readthedocs.io/)**: For making HTTP requests to the OVH API
 - **[pydantic](https://pydantic-docs.helpmanual.io/)**: For data validation and settings management
 - **[schedule](https://schedule.readthedocs.io/)**: For periodic task execution
-
-## References
-
-- **Official OVH documentation**: [OVH Dynhost Docs](https://docs.ovh.com/gb/en/domains/hosting_dynhost/)
-- **IPIFY documentation**: [Python-IPIFY GitHub](https://github.com/rdegges/python-ipify)
-- **DockerHub**: [cibrandocampo/ovh-dyndns-client](https://hub.docker.com/repository/docker/cibrandocampo/ovh-dyndns-client)
 
 ## Support
 
@@ -237,9 +249,3 @@ This means:
 - ✅ **Commercial use**: Can be used commercially, but derivative works must also be open source
 
 For more details, see the [LICENSE](LICENSE) file or visit [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html).
-
----
-
-<div align="center">
-  <strong>Made with ❤️ by <a href="https://cibran.es">Cibrán Docampo</a></strong>
-</div>

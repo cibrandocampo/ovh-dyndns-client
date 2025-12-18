@@ -29,8 +29,8 @@ class TestLogger(unittest.TestCase):
         
         # Assert the logger's name and level are as expected
         self.assertEqual(logger.name, "ovh-dydns")
-        # In development environment, LOGGER_LEVEL is set to DEBUG
-        self.assertEqual(logger.level, logging.DEBUG)
+        # Default level is INFO when no environment variable is set
+        self.assertEqual(logger.level, logging.INFO)
         
         # Assert the logger has handlers attached
         self.assertTrue(logger.hasHandlers())
