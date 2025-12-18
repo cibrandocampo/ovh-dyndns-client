@@ -25,6 +25,9 @@ class TestUpdateDnsController(unittest.TestCase):
         mock_ipify = mock_ipify_client.return_value
         mock_ipify.get_public_ip.return_value = "192.168.1.1"
         
+        # Recreate controller after patches are applied
+        self.controller = UpdateDnsController()
+        
         config = Config()
         config.set_ip("192.168.1.1")
         
@@ -46,6 +49,9 @@ class TestUpdateDnsController(unittest.TestCase):
         mock_ipify = mock_ipify_client.return_value
         mock_ipify.get_public_ip.return_value = "192.168.1.1"
         
+        # Recreate controller after patches are applied
+        self.controller = UpdateDnsController()
+        
         config = Config()
         config.set_ip("192.168.1.1")
         
@@ -63,7 +69,7 @@ class TestUpdateDnsController(unittest.TestCase):
         
         # Assertions
         mock_ipify.get_public_ip.assert_called_once()
-        mock_ovh_client.assert_called_once_with(failed_host)
+        mock_ovh_client.assert_called_once_with(host=failed_host)
         mock_ovh_instance.update_ip.assert_called_once_with("192.168.1.1")
     
     @patch('application.controller.IpifyClient')
@@ -76,6 +82,9 @@ class TestUpdateDnsController(unittest.TestCase):
         # Setup mocks
         mock_ipify = mock_ipify_client.return_value
         mock_ipify.get_public_ip.return_value = "192.168.1.2"
+        
+        # Recreate controller after patches are applied
+        self.controller = UpdateDnsController()
         
         config = Config()
         config.set_ip("192.168.1.1")
@@ -108,6 +117,9 @@ class TestUpdateDnsController(unittest.TestCase):
         # Setup mock to raise exception
         mock_ipify = mock_ipify_client.return_value
         mock_ipify.get_public_ip.side_effect = Exception("Network error")
+        
+        # Recreate controller after patches are applied
+        self.controller = UpdateDnsController()
         
         # Execute and assert
         with self.assertRaises(RuntimeError) as context:
