@@ -8,7 +8,7 @@ This client automatically maintains your OVH domains pointing to your current pu
 
 - **Automatic updates**: Detects IP changes and updates only when necessary
 - **High performance**: Singleton pattern to avoid unnecessary reinitializations
-- **Docker-ready**: Official image available on DockerHub
+- **Docker-ready**: Official image available on DockerHub with multi-architecture support (amd64, 386, arm64/v8, arm/v7)
 - **Complete logging**: Configurable and detailed logging system
 - **Efficient**: Only updates when the IP actually changes
 - **Robust**: Error handling and automatic recovery
