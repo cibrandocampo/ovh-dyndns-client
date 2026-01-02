@@ -1,5 +1,11 @@
 # DynDNS Client for OVH
 
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/cibrandocampo/ovh-dyndns-client)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Image-blue?logo=docker)](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
+[![Python](https://img.shields.io/badge/python-3.14-blue?logo=python)](https://www.python.org/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/cibrandocampo/ovh-dyndns-client)](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
+[![License](https://img.shields.io/badge/License-GPL%20v3.0-green.svg)](LICENSE)
+
 A robust and efficient client for keeping OVH domains pointing to a dynamic IP address.
 
 This client automatically maintains your OVH domains pointing to your current public IP, even when it changes. It uses the Singleton pattern to optimize performance and avoid unnecessary updates.
@@ -13,24 +19,56 @@ This client automatically maintains your OVH domains pointing to your current pu
 - **Efficient**: Only updates when the IP actually changes
 - **Robust**: Error handling and automatic recovery
 
-## How It Works
+## Quick Start
 
-The process is simple and consists of three steps:
+### Docker Image
 
-1. The **ipify** library is used to get the current public IP.
-2. If the obtained IP is different from the last one registered with OVH, the update process is triggered.
-3. The OVH API is called for each configured domain to update its IP.
+Pre-built images are available on [Docker Hub](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client). For production use, two tags are recommended:
 
-## Quick Reference Information
+- **`latest`**: Most up-to-date version passing unit tests
+- **`stable`**: Latest version passing both unit and integration tests (recommended for production)
 
-- Official OVH documentation: [OVH Dynhost Docs](https://docs.ovh.com/gb/en/domains/hosting_dynhost/)
-- Official IPIFY documentation: [Python-IPIFY GitHub](https://github.com/rdegges/python-ipify)
+Version-specific tags are also available (e.g., `2.0.0`).
 
-## Installation and Usage
+### Setup
 
-### 1. Host Configuration
+1. **Create `docker-compose.yaml`:**
 
-Create a JSON file with your domain configuration:
+```yaml
+services:
+  ovh-dyndns-client:
+    image: cibrandocampo/ovh-dyndns-client:${DOCKER_OVH_VERSION:-stable}
+    container_name: "${PROJECT_NAME:-ovh-dyndns-client}"
+    restart: always
+    init: true
+    env_file:
+      - .env
+    volumes:
+      - ${HOSTS_CONFIG_FILE_PATH}:/app/hosts.json
+```
+
+2. **Create `.env` file:**
+
+```ini
+PROJECT_NAME=ovh-dyndns-client
+DOCKER_OVH_VERSION=stable
+HOSTS_CONFIG_FILE_PATH=/path/to/hosts.json
+UPDATE_INTERVAL=600
+LOGGER_LEVEL=INFO
+```
+
+Available environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROJECT_NAME` | `ovh-dyndns-client` | Container name |
+| `DOCKER_OVH_VERSION` | `stable` | Docker image version |
+| `HOSTS_CONFIG_FILE_PATH` | `/app/hosts.json` | Path to hosts JSON file |
+| `UPDATE_INTERVAL` | `300` | Check interval in seconds |
+| `LOGGER_NAME` | `ovh-dydns` | Logger name |
+| `LOGGER_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) |
+
+3. **Create `hosts.json` file:**
 
 ```json
 [
@@ -47,77 +85,17 @@ Create a JSON file with your domain configuration:
 ]
 ```
 
-### 2. Docker Compose Deployment
-
-Create a `docker-compose.yaml` file:
-
-```yaml
-services:
-  ovh-dyndns-client:
-    image: cibrandocampo/ovh-dyndns-client:${DOCKER_OVH_VERSION:-stable}
-    container_name: "${PROJECT_NAME:-ovh-dyndns-client}"
-    restart: always
-    init: true
-    env_file:
-      - .env
-    volumes:
-      - ${HOSTS_CONFIG_FILE_PATH}:/app/hosts.json
-```
-
-### 3. Environment Variables
-
-Create a `.env` file with the following configuration:
-
-```ini
-# Project
-PROJECT_NAME=ovh-dyndns-client
-
-# Docker version
-DOCKER_OVH_VERSION=stable
-
-# General config
-HOSTS_CONFIG_FILE_PATH=/volume1/docker/network/dyndns/volumes/hosts.json
-UPDATE_INTERVAL=300
-
-# Logger
-LOGGER_NAME=ovh-dydns
-LOGGER_LEVEL=INFO
-```
-
-### 4. Run
+4. **Run:**
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-## Advanced Configuration
+## How It Works
 
-### Available Environment Variables
-
-| Variable | Default Value | Description |
-|----------|---------------|-------------|
-| `PROJECT_NAME` | `ovh-dyndns-client` | Container name for the application |
-| `DOCKER_OVH_VERSION` | `stable` | Docker image version to use |
-| `HOSTS_CONFIG_FILE_PATH` | `/app/hosts.json` | Path to the JSON configuration file containing the host details |
-| `UPDATE_INTERVAL` | `300` (seconds) | Interval in seconds to check and update the IP |
-| `LOGGER_NAME` | `ovh-dydns` | Name of the logger for the application |
-| `LOGGER_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) |
-
-### Complete Configuration Example
-
-```ini
-# Project configuration
-PROJECT_NAME=my-dyndns-client
-DOCKER_OVH_VERSION=2.0.0
-
-# General configuration
-HOSTS_CONFIG_FILE_PATH=/home/user/dyndns/hosts.json
-UPDATE_INTERVAL=600
-
-# Logger configuration
-LOGGER_NAME=my-dyndns
-LOGGER_LEVEL=DEBUG
-```
+1. Retrieves current public IP using **ipify**
+2. Compares with last registered IP
+3. Updates OVH DNS records only if IP changed
 
 ## Monitoring and Logs
 
@@ -214,13 +192,19 @@ The project maintains high test coverage to ensure code quality and reliability.
 
 Tests are automatically executed in CI/CD pipelines before building Docker images to ensure code quality.
 
-### Singleton Pattern
+### Architecture
 
-The project uses the Singleton pattern for the `Config` class, which ensures:
+Uses Singleton pattern for `Config` class to maintain IP state between scheduler executions and avoid unnecessary reinitializations.
 
-- **Persistent state**: IP is maintained between scheduler executions
-- **Efficiency**: Avoids unnecessary reinitializations
-- **Consistency**: Single source of truth for configuration
+## Links
+
+- **GitHub Repository**: [github.com/cibrandocampo/ovh-dyndns-client](https://github.com/cibrandocampo/ovh-dyndns-client)
+- **Docker Hub Image**: [hub.docker.com/r/cibrandocampo/ovh-dyndns-client](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
+
+## References
+
+- [OVH Dynhost Documentation](https://docs.ovh.com/gb/en/domains/hosting_dynhost/)
+- [Python-IPIFY](https://github.com/rdegges/python-ipify)
 
 ## Dependencies
 
@@ -233,19 +217,9 @@ This project is built on top of open source libraries:
 
 ## Support
 
-If you need additional support, feel free to reach out:
-
 - **Email**: [hello@cibran.es](mailto:hello@cibran.es)
-- **Issues**: Report problems in the repository
+- **Issues**: Open an issue in the repository
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0**.
-
-This means:
-- ✅ **Free to use**: Anyone can use this software for any purpose
-- ✅ **Open source**: Source code must remain open and accessible
-- ✅ **Share improvements**: Any modifications or improvements must be published under the same license
-- ✅ **Commercial use**: Can be used commercially, but derivative works must also be open source
-
-For more details, see the [LICENSE](LICENSE) file or visit [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html).
+Licensed under **GNU General Public License v3.0**. See [LICENSE](LICENSE) for details.
