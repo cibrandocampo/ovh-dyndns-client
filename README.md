@@ -2,6 +2,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/cibrandocampo/ovh-dyndns-client)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Image-blue?logo=docker)](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/cibrandocampo/ovh-dyndns-client)](https://github.com/cibrandocampo/ovh-dyndns-client/releases)
 [![Python](https://img.shields.io/badge/python-3.14-blue?logo=python)](https://www.python.org/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/cibrandocampo/ovh-dyndns-client)](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
 [![License](https://img.shields.io/badge/License-GPL%20v3.0-green.svg)](LICENSE)
