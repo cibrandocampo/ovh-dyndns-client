@@ -1,5 +1,5 @@
 ## Stage 1 - Install requirements ##
-FROM python:3.13-alpine AS base
+FROM python:3.14-alpine AS base
 
 WORKDIR /install
 
@@ -10,7 +10,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir /install/wheels -r requirements.txt
 
 ## Stage 2 - Image creation ##
-FROM python:3.13-alpine
+FROM python:3.14-alpine
 
 WORKDIR /app
 
