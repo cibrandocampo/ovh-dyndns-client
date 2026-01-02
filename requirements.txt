@@ -1,4 +1,4 @@
 ipify-py==1.0.1
-pydantic==2.11.7
-requests==2.32.4
+pydantic==2.12.5
+requests==2.32.5
 schedule==1.2.2
