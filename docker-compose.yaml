@@ -7,4 +7,4 @@ services:
     env_file:
       - .env
     volumes:
-      - ${HOSTS_CONFIG_FILE_PATH}:/app/hosts.json
+      - ${HOSTS_LOCAL_PATH}:${HOSTS_APP_PATH:-/app/config/hosts.json}

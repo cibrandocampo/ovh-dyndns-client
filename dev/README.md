@@ -56,16 +56,13 @@ The source code is mounted as a volume, so changes are reflected immediately wit
 
 ## Environment Variables
 
-Copy `env.example` to `.env` and adjust the values:
+Environment variables are configured directly in `docker-compose.yaml`. Key variables:
 
-```bash
-cp env.example .env
-```
-
-Key variables:
 - `LOGGER_LEVEL=DEBUG` - Enable debug logging
 - `UPDATE_INTERVAL=60` - Faster updates for testing
-- `HOSTS_CONFIG_FILE_PATH` - Path to your test hosts configuration
+- `HOSTS_APP_PATH` - Path to hosts configuration file inside container (default: `/app/config/hosts.json`)
+
+To modify these values, edit the `environment` section in `docker-compose.yaml`.
 
 ## Project Structure
 
@@ -75,7 +72,6 @@ dev/
 ├── docker-compose.yaml # Development services
 ├── dev-requirements.txt # Development dependencies
 ├── Makefile           # Development commands
-├── env.example        # Environment variables template
 ├── README.md          # This file
 └── logs/              # Development logs (created automatically)
 ```

@@ -45,15 +45,23 @@ services:
     env_file:
       - .env
     volumes:
-      - ${HOSTS_CONFIG_FILE_PATH}:/app/hosts.json
+      - ${HOSTS_LOCAL_PATH}:${HOSTS_APP_PATH:-/app/config/hosts.json}
 ```
 
 2. **Create `.env` file:**
 
+Copy `env.example` to `.env` and adjust the values:
+
+```bash
+cp env.example .env
+```
+
+Example `.env` file:
+
 ```ini
 PROJECT_NAME=ovh-dyndns-client
 DOCKER_OVH_VERSION=stable
-HOSTS_CONFIG_FILE_PATH=/path/to/hosts.json
+HOSTS_LOCAL_PATH=/path/to/hosts.json
 UPDATE_INTERVAL=600
 LOGGER_LEVEL=INFO
 ```
@@ -64,7 +72,8 @@ Available environment variables:
 |----------|---------|-------------|
 | `PROJECT_NAME` | `ovh-dyndns-client` | Container name |
 | `DOCKER_OVH_VERSION` | `stable` | Docker image version |
-| `HOSTS_CONFIG_FILE_PATH` | `/app/hosts.json` | Path to hosts JSON file |
+| `HOSTS_LOCAL_PATH` | - | **Required.** Path to hosts JSON file on the host machine |
+| `HOSTS_APP_PATH` | `/app/config/hosts.json` | Path to hosts JSON file inside the container (only modify for development) |
 | `UPDATE_INTERVAL` | `300` | Check interval in seconds |
 | `LOGGER_NAME` | `ovh-dydns` | Logger name |
 | `LOGGER_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) |
