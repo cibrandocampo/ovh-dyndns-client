@@ -33,7 +33,7 @@ jobs:
       - name: Run tests
         working-directory: src
         env:
-          HOSTS_CONFIG_FILE_PATH: ${{ github.workspace }}/hosts.json
+          HOSTS_APP_PATH: ${{ github.workspace }}/hosts.json
         run: |
           export PYTHONPATH=${{ github.workspace }}/src:$PYTHONPATH
           python -m pytest test/ -v
@@ -41,7 +41,7 @@ jobs:
       - name: Check test coverage
         working-directory: src
         env:
-          HOSTS_CONFIG_FILE_PATH: ${{ github.workspace }}/hosts.json
+          HOSTS_APP_PATH: ${{ github.workspace }}/hosts.json
         run: |
           export PYTHONPATH=${{ github.workspace }}/src:$PYTHONPATH
           python -m pytest test/ --cov=. --cov-report=term-missing --cov-fail-under=80 || true

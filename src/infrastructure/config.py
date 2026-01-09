@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from domain.hostconfig import HostConfig
 
 DEFAULT_UPDATE_INTERVAL = 300
-DEFAULT_HOST_FILE_PATH = Path("/app/hosts.json")  # Config path from Docker volume
+DEFAULT_HOST_FILE_PATH = Path("/app/config/hosts.json")  # Default path inside container
 
 
 class Config:
@@ -29,8 +29,8 @@ class Config:
     def __init__(self):
         # Only initialize once
         if not hasattr(self, '_initialized'):
-            # Allow override via environment variable for testing
-            hosts_file_path = os.getenv("HOSTS_CONFIG_FILE_PATH")
+            # Allow override via environment variable for development/testing
+            hosts_file_path = os.getenv("HOSTS_APP_PATH")
             self.host_file_path = Path(hosts_file_path) if hosts_file_path else DEFAULT_HOST_FILE_PATH
             self._hosts_config = None
             self._ip = None
