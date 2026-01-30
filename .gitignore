@@ -1,3 +1,11 @@
+# macOS
+.DS_Store
+
+# SQLite database
+data/
+dev/data/
+*.db
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

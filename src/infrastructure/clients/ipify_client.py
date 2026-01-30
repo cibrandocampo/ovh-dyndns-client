@@ -1,9 +1,10 @@
 import ipify
 from pydantic import IPvAnyAddress
 from infrastructure.logger import Logger
+from application.ports import IpProvider
 
 
-class IpifyClient:
+class IpifyClient(IpProvider):
     """
     Client for retrieving the current public IP address using the ipify service.
     """

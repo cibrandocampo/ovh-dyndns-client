@@ -14,9 +14,15 @@ FROM python:3.14-alpine
 
 WORKDIR /app
 
+# Create data directory for SQLite
+RUN mkdir -p /app/data
+
 COPY --from=base /install/wheels /wheels
 RUN pip install --no-cache /wheels/* && rm -r /wheels
 
 COPY ./src /app
+
+# Expose API port
+EXPOSE 8000
 
 ENTRYPOINT ["python", "main.py"]

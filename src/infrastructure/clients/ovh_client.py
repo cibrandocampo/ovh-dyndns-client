@@ -2,63 +2,63 @@ import requests
 from requests.auth import HTTPBasicAuth
 from pydantic.networks import IPvAnyAddress
 
-
 from domain.hostconfig import HostConfig
-from infrastructure.config import Config
 from infrastructure.logger import Logger
+from application.ports import DnsUpdater
 
 HOST = "https://www.ovh.com"
 PATH = "/nic/update"
 SYS_PARAM = "dyndns"
 
 
-class OvhClient:
+class OvhClient(DnsUpdater):
     """
     Client to update the public IP of a hostname using the OVH API.
     """
 
-    def __init__(self, host: HostConfig):
+    def __init__(self):
         """
-        Initializes the client with the given host configuration.
+        Initializes the client with a logger instance.
         """
         self.logger = Logger().get_logger()
-        self.config = Config()
-        self.host = host
-        self.auth = self._get_auth()
 
-    def _get_auth(self) -> HTTPBasicAuth:
+    def _get_auth(self, host: HostConfig) -> HTTPBasicAuth:
         """
         Creates HTTP basic authentication object from host credentials.
-        
+
+        Args:
+            host: Host configuration with credentials.
+
         Returns:
             HTTPBasicAuth: Authentication object for OVH API requests.
         """
-        self.logger.info(f'{self.host.hostname} | Authenticating as {self.host.username}')
+        self.logger.info(f'{host.hostname} | Authenticating as {host.username}')
         return HTTPBasicAuth(
-            username=self.host.username,
-            password=self.host.password.get_secret_value()
+            username=host.username,
+            password=host.password.get_secret_value()
         )
 
-    def update_ip(self, new_public_ip: IPvAnyAddress) -> bool:
+    def update_ip(self, host: HostConfig, ip: IPvAnyAddress) -> bool:
         """
         Updates the host's public IP address via OVH API.
-        
+
         Args:
-            new_public_ip: The new IP address to set for the hostname.
-            
+            host: Host configuration to update.
+            ip: The new IP address to set for the hostname.
+
         Returns:
             bool: True if the update was successful, False otherwise.
-                 Returns None if a request exception occurred.
         """
-        url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={self.host.hostname}&myip={new_public_ip}'
+        url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={host.hostname}&myip={ip}'
+        auth = self._get_auth(host)
 
         try:
-            self.logger.info(f'{self.host.hostname} | Updating IP')
-            response = requests.get(url, auth=self.auth)
-            self.logger.info(f'{self.host.hostname} | Update response: {response.status_code} {response.text}')
-            
+            self.logger.info(f'{host.hostname} | Updating IP')
+            response = requests.get(url, auth=auth)
+            self.logger.info(f'{host.hostname} | Update response: {response.status_code} {response.text}')
+
             return response.ok
 
         except requests.RequestException as e:
-            self.logger.error(f'{self.host.hostname} | IP update failed: {e}')
-            return None
+            self.logger.error(f'{host.hostname} | IP update failed: {e}')
+            return False
