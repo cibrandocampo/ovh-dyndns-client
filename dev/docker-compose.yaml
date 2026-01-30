@@ -12,14 +12,13 @@ services:
       PYTHONPATH: /app
       GEVENT_SUPPORT: True
       PYTHONDONTWRITEBYTECODE: 1
-      # Development environment variables
       LOGGER_LEVEL: DEBUG
-      UPDATE_INTERVAL: 60  # Faster updates for testing
+      API_PORT: 8000
+      DATABASE_PATH: /app/data/dyndns.db
+      JWT_SECRET: dev-secret-key-change-in-prod
     volumes:
       - ../src/:/app
-      - ./logs:/app/logs    # Mount logs directory
-      - ./hosts.json:/app/hosts.json  # Mount hosts configuration
-    network_mode: host
-    # Optional: Add port mapping for debugging
+      - ./data:/app/data
     ports:
-      - "5678:5678"  # Debug port
+      - "8000:8000"
+      - "5678:5678"
