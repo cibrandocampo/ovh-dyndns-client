@@ -6,5 +6,7 @@ services:
     init: true
     env_file:
       - .env
+    ports:
+      - "${API_PORT:-8000}:8000"
     volumes:
-      - ${HOSTS_LOCAL_PATH}:${HOSTS_APP_PATH:-/app/config/hosts.json}
+      - ${DATA_PATH:-./data}:/app/data
