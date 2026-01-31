@@ -5,5 +5,5 @@ from pydantic import IPvAnyAddress
 class IpProvider(ABC):
     @abstractmethod
     def get_public_ip(self) -> IPvAnyAddress:
-        """Obtiene la IP pública actual."""
+        """Get the current public IP address."""
         pass

@@ -24,16 +24,27 @@ class TestLogger(unittest.TestCase):
         """
         Tests that the `get_logger()` method retrieves a logger configured with default values.
         """
-        # Get the logger using the method under test
-        logger = Logger.get_logger()
-        
-        # Assert the logger's name and level are as expected
-        self.assertEqual(logger.name, "ovh-dydns")
-        # Default level is INFO when no environment variable is set
-        self.assertEqual(logger.level, logging.INFO)
-        
-        # Assert the logger has handlers attached
-        self.assertTrue(logger.hasHandlers())
+        # Remove env vars if they exist to test defaults
+        import os
+        env_backup = {}
+        for key in ["LOGGER_NAME", "LOGGER_LEVEL"]:
+            if key in os.environ:
+                env_backup[key] = os.environ.pop(key)
+        try:
+            Config._instance = None  # Reset singleton
+            # Get the logger using the method under test
+            logger = Logger.get_logger()
+
+            # Assert the logger's name and level are as expected
+            self.assertEqual(logger.name, "ovh-dyndns")
+            # Default level is INFO when no environment variable is set
+            self.assertEqual(logger.level, logging.INFO)
+
+            # Assert the logger has handlers attached
+            self.assertTrue(logger.hasHandlers())
+        finally:
+            # Restore env vars
+            os.environ.update(env_backup)
     
     def test_get_logger_with_custom_name_and_level(self):
         """

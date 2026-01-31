@@ -1,5 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
+from typing import Tuple, Optional
 from pydantic.networks import IPvAnyAddress
 
 from domain.hostconfig import HostConfig
@@ -9,6 +10,18 @@ from application.ports import DnsUpdater
 HOST = "https://www.ovh.com"
 PATH = "/nic/update"
 SYS_PARAM = "dyndns"
+
+# OVH DynHost response codes
+RESPONSE_MESSAGES = {
+    "good": "IP updated successfully",
+    "nochg": "IP unchanged (already set)",
+    "nohost": "Hostname not found - check DynHost configuration in OVH",
+    "badauth": "Authentication failed - check username/password",
+    "notfqdn": "Invalid hostname format",
+    "abuse": "Too many requests - try again later",
+    "911": "OVH service error - try again later",
+    "badagent": "Invalid request",
+}
 
 
 class OvhClient(DnsUpdater):
@@ -38,7 +51,29 @@ class OvhClient(DnsUpdater):
             password=host.password.get_secret_value()
         )
 
-    def update_ip(self, host: HostConfig, ip: IPvAnyAddress) -> bool:
+    def _parse_response(self, response_text: str) -> Tuple[bool, Optional[str]]:
+        """
+        Parse the OVH DynHost API response.
+
+        Args:
+            response_text: Raw response text from OVH API.
+
+        Returns:
+            Tuple[bool, Optional[str]]: (success, error_message)
+        """
+        response_text = response_text.strip().lower()
+
+        # Success cases
+        if response_text.startswith("good") or response_text.startswith("nochg"):
+            return True, None
+
+        # Error cases - extract the error code
+        error_code = response_text.split()[0] if response_text else "unknown"
+        error_message = RESPONSE_MESSAGES.get(error_code, f"Unknown error: {response_text}")
+
+        return False, error_message
+
+    def update_ip(self, host: HostConfig, ip: IPvAnyAddress) -> Tuple[bool, Optional[str]]:
         """
         Updates the host's public IP address via OVH API.
 
@@ -47,18 +82,21 @@ class OvhClient(DnsUpdater):
             ip: The new IP address to set for the hostname.
 
         Returns:
-            bool: True if the update was successful, False otherwise.
+            Tuple[bool, Optional[str]]: (success, error_message)
         """
         url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={host.hostname}&myip={ip}'
         auth = self._get_auth(host)
 
         try:
-            self.logger.info(f'{host.hostname} | Updating IP')
+            self.logger.info(f'{host.hostname} | Updating IP to {ip}')
             response = requests.get(url, auth=auth)
-            self.logger.info(f'{host.hostname} | Update response: {response.status_code} {response.text}')
+            self.logger.info(f'{host.hostname} | Response: {response.status_code} {response.text}')
 
-            return response.ok
+            if not response.ok:
+                return False, f"HTTP {response.status_code}: {response.reason}"
+
+            return self._parse_response(response.text)
 
         except requests.RequestException as e:
-            self.logger.error(f'{host.hostname} | IP update failed: {e}')
-            return False
+            self.logger.error(f'{host.hostname} | Request failed: {e}')
+            return False, f"Connection error: {str(e)}"

@@ -6,10 +6,15 @@ from pydantic import IPvAnyAddress
 class IpStateStore(ABC):
     @abstractmethod
     def get_ip(self) -> Optional[IPvAnyAddress]:
-        """Obtiene la IP almacenada."""
+        """Get the stored IP address."""
         pass
 
     @abstractmethod
     def set_ip(self, ip: IPvAnyAddress) -> None:
-        """Almacena la IP actual."""
+        """Store the current IP address."""
+        pass
+
+    @abstractmethod
+    def update_last_check(self) -> None:
+        """Update the last check timestamp."""
         pass

@@ -186,6 +186,19 @@ document.querySelectorAll('.nav-link[data-section]').forEach(link => {
     });
 });
 
+// Status message helper
+function showStatusMessage(message, type = 'info') {
+    const messageEl = document.getElementById('status-message');
+    messageEl.textContent = message;
+    messageEl.className = `message ${type}`;
+    messageEl.classList.remove('hidden');
+
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        messageEl.classList.add('hidden');
+    }, 5000);
+}
+
 // Status
 async function loadStatus() {
     try {
@@ -196,6 +209,9 @@ async function loadStatus() {
         document.getElementById('last-check').textContent = data.last_check
             ? new Date(data.last_check).toLocaleString()
             : 'Never';
+        document.getElementById('next-check').textContent = data.next_check
+            ? new Date(data.next_check).toLocaleString()
+            : '-';
 
         const tbody = document.querySelector('#host-status-table tbody');
         tbody.innerHTML = data.hosts.map(host => `
@@ -206,10 +222,38 @@ async function loadStatus() {
                     ${host.last_status === true ? 'Success' : host.last_status === false ? 'Failed' : 'Pending'}
                 </td>
                 <td>${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
+                <td>
+                    <button class="btn btn-small btn-primary" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')">Force Update</button>
+                </td>
             </tr>
         `).join('');
     } catch (error) {
         console.error('Failed to load status:', error);
+    }
+}
+
+async function forceUpdateHost(hostname) {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+
+    try {
+        const response = await API.post(`/api/status/trigger/${encodeURIComponent(hostname)}`, {});
+        const data = await response.json();
+
+        if (data.success) {
+            showStatusMessage(data.message, 'success');
+        } else {
+            showStatusMessage(data.message, 'error');
+        }
+
+        loadStatus();
+    } catch (error) {
+        showStatusMessage('Failed to update host', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
     }
 }
 
@@ -223,14 +267,14 @@ document.getElementById('trigger-update').addEventListener('click', async () => 
         const data = await response.json();
 
         if (data.success) {
-            alert('DNS update triggered successfully');
+            showStatusMessage(data.message, 'success');
         } else {
-            alert('DNS update failed: ' + data.message);
+            showStatusMessage(data.message, 'error');
         }
 
         loadStatus();
     } catch (error) {
-        alert('Failed to trigger update');
+        showStatusMessage('Failed to trigger update', 'error');
     } finally {
         btn.disabled = false;
         btn.textContent = 'Trigger Update Now';
@@ -466,3 +510,4 @@ function escapeHtml(text) {
 // Make functions globally accessible
 window.editHost = editHost;
 window.confirmDeleteHost = confirmDeleteHost;
+window.forceUpdateHost = forceUpdateHost;
