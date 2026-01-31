@@ -77,10 +77,15 @@
                             <h3>Last Check</h3>
                             <p id="last-check" class="big-text">-</p>
                         </div>
+                        <div class="card">
+                            <h3>Next Scheduled Check</h3>
+                            <p id="next-check" class="big-text">-</p>
+                        </div>
                     </div>
                     <div class="actions">
                         <button id="trigger-update" class="btn btn-primary">Trigger Update Now</button>
                     </div>
+                    <div id="status-message" class="message hidden"></div>
                     <h3>Host Status</h3>
                     <table class="table" id="host-status-table">
                         <thead>
@@ -89,6 +94,7 @@
                                 <th>Last Update</th>
                                 <th>Status</th>
                                 <th>Error</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody></tbody>

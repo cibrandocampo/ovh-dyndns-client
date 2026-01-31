@@ -48,6 +48,16 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 )
                 db.add(history)
 
+    def update_last_check(self) -> None:
+        """Update the last check timestamp."""
+        with get_db_session() as db:
+            state = db.query(State).filter(State.id == 1).first()
+            if state:
+                state.last_check = datetime.now(timezone.utc)
+            else:
+                state = State(id=1, last_check=datetime.now(timezone.utc))
+                db.add(state)
+
     # HostsRepository implementation
 
     def get_hosts(self) -> List[HostConfig]:
@@ -62,6 +72,34 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 )
                 for host in hosts
             ]
+
+    def get_pending_hosts(self) -> List[HostConfig]:
+        """Get hosts that need updating (failed or never updated)."""
+        with get_db_session() as db:
+            from sqlalchemy import or_
+            hosts = db.query(Host).filter(
+                or_(Host.last_status == False, Host.last_status == None)
+            ).all()
+            return [
+                HostConfig(
+                    hostname=host.hostname,
+                    username=host.username,
+                    password=SecretStr(host.password)
+                )
+                for host in hosts
+            ]
+
+    def get_host_by_hostname(self, hostname: str) -> Optional[HostConfig]:
+        """Get a host by its hostname."""
+        with get_db_session() as db:
+            host = db.query(Host).filter(Host.hostname == hostname).first()
+            if not host:
+                return None
+            return HostConfig(
+                hostname=host.hostname,
+                username=host.username,
+                password=SecretStr(host.password)
+            )
 
     # Extended methods for API
 

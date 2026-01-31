@@ -37,60 +37,108 @@ class TestOvhClient(unittest.TestCase):
         self.assertEqual(auth.password, "pass")
 
     @patch("requests.get")
-    def test_update_ip_success(self, mock_get):
+    def test_update_ip_success_good(self, mock_get):
         """
-        Tests the successful execution of the `update_ip` method. The test simulates
-        a successful IP update request (status code 200). The method should return True.
+        Tests the successful execution of the `update_ip` method with 'good' response.
         """
-        # Mock the response from the requests.get call
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.text = "good 192.168.1.1"
         mock_response.ok = True
         mock_get.return_value = mock_response
 
-        # Call the method under test and assert the expected behavior
-        result = self.client.update_ip(self.mock_host, "192.168.1.1")
-        self.assertTrue(result)
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertTrue(success)
+        self.assertIsNone(error)
 
-        # Assert that the `requests.get` method was called once
         mock_get.assert_called_once()
+
+    @patch("requests.get")
+    def test_update_ip_success_nochg(self, mock_get):
+        """
+        Tests the successful execution of the `update_ip` method with 'nochg' response.
+        """
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "nochg 192.168.1.1"
+        mock_response.ok = True
+        mock_get.return_value = mock_response
+
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertTrue(success)
+        self.assertIsNone(error)
+
+    @patch("requests.get")
+    def test_update_ip_failure_badauth(self, mock_get):
+        """
+        Tests the failure scenario when authentication fails.
+        """
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "badauth"
+        mock_response.ok = True
+        mock_get.return_value = mock_response
+
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertFalse(success)
+        self.assertIn("Authentication failed", error)
+
+    @patch("requests.get")
+    def test_update_ip_failure_nohost(self, mock_get):
+        """
+        Tests the failure scenario when hostname is not found.
+        """
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "nohost"
+        mock_response.ok = True
+        mock_get.return_value = mock_response
+
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertFalse(success)
+        self.assertIn("Hostname not found", error)
 
     @patch("requests.get")
     def test_update_ip_failure_status_code(self, mock_get):
         """
         Tests the failure scenario when the IP update request returns a non-OK status code.
-        The method should return False.
         """
-        # Mock the response with a failure status code
         mock_response = MagicMock()
         mock_response.status_code = 400
+        mock_response.reason = "Bad Request"
         mock_response.text = "bad request"
         mock_response.ok = False
         mock_get.return_value = mock_response
 
-        # Call the method and assert it returns False
-        result = self.client.update_ip(self.mock_host, "192.168.1.1")
-        self.assertFalse(result)
-
-        # Assert that the `requests.get` method was called once
-        mock_get.assert_called_once()
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertFalse(success)
+        self.assertIn("HTTP 400", error)
 
     @patch("requests.get")
     def test_update_ip_exception(self, mock_get):
         """
-        Tests the failure scenario for the `update_ip` method when the IP update request
-        raises a `requests.RequestException`. The method should return False.
+        Tests the failure scenario when the request raises an exception.
         """
-        # Simulate a network error (request failure)
         mock_get.side_effect = requests.RequestException("Network error")
 
-        # Call the method and assert it returns False
-        result = self.client.update_ip(self.mock_host, "192.168.1.1")
-        self.assertFalse(result)
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertFalse(success)
+        self.assertIn("Connection error", error)
 
-        # Assert that the `requests.get` method was called once
-        mock_get.assert_called_once()
+    @patch("requests.get")
+    def test_update_ip_unknown_error(self, mock_get):
+        """
+        Tests the failure scenario with an unknown error response.
+        """
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "somethingweird"
+        mock_response.ok = True
+        mock_get.return_value = mock_response
+
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertFalse(success)
+        self.assertIn("Unknown error", error)
 
 
 if __name__ == "__main__":

@@ -33,25 +33,27 @@ class FakeIpProviderWithException(IpProvider):
 class FakeDnsUpdater(DnsUpdater):
     def __init__(self):
         self.calls: List[tuple] = []
-        self._results: List[bool] = []
-        self._default_result = True
+        self._results: List[tuple] = []
+        self._default_result = (True, None)
 
-    def update_ip(self, host: HostConfig, ip: IPvAnyAddress) -> bool:
+    def update_ip(self, host: HostConfig, ip: IPvAnyAddress) -> tuple:
         self.calls.append((host, ip))
         if self._results:
             return self._results.pop(0)
         return self._default_result
 
-    def set_results(self, results: List[bool]) -> None:
+    def set_results(self, results: List[tuple]) -> None:
+        """Set results as list of (success, error_message) tuples."""
         self._results = results.copy()
 
-    def set_default_result(self, result: bool) -> None:
-        self._default_result = result
+    def set_default_result(self, success: bool, error: str = None) -> None:
+        self._default_result = (success, error)
 
 
 class FakeIpStateStore(IpStateStore):
     def __init__(self, ip: Optional[str] = None):
         self._ip: Optional[IPvAnyAddress] = IPvAnyAddress(ip) if ip else None
+        self.last_check_updated = False
 
     def get_ip(self) -> Optional[IPvAnyAddress]:
         return self._ip
@@ -59,16 +61,36 @@ class FakeIpStateStore(IpStateStore):
     def set_ip(self, ip: IPvAnyAddress) -> None:
         self._ip = ip
 
+    def update_last_check(self) -> None:
+        self.last_check_updated = True
+
 
 class FakeHostsRepository(HostsRepository):
-    def __init__(self, hosts: Optional[List[HostConfig]] = None):
+    def __init__(self, hosts: Optional[List[HostConfig]] = None, pending_hosts: Optional[List[HostConfig]] = None):
         self._hosts = hosts or []
+        self._pending_hosts = pending_hosts or []
+        self.status_updates: List[tuple] = []
 
     def get_hosts(self) -> List[HostConfig]:
         return self._hosts
 
+    def get_pending_hosts(self) -> List[HostConfig]:
+        return self._pending_hosts
+
+    def get_host_by_hostname(self, hostname: str) -> Optional[HostConfig]:
+        for host in self._hosts:
+            if host.hostname == hostname:
+                return host
+        return None
+
+    def update_host_status(self, hostname: str, success: bool, error: str = None) -> None:
+        self.status_updates.append((hostname, success, error))
+
     def set_hosts(self, hosts: List[HostConfig]) -> None:
         self._hosts = hosts
+
+    def set_pending_hosts(self, hosts: List[HostConfig]) -> None:
+        self._pending_hosts = hosts
 
 
 class TestUpdateDnsController(unittest.TestCase):
@@ -92,35 +114,36 @@ class TestUpdateDnsController(unittest.TestCase):
             logger=self.logger
         )
 
-    def test_handler_ip_unchanged_no_failed_hosts(self):
+    def test_handler_ip_unchanged_no_pending_hosts(self):
         """
-        Tests handler when IP hasn't changed and there are no failed hosts.
+        Tests handler when IP hasn't changed and there are no pending hosts.
         Should skip update and not call dns_updater.
         """
         self.ip_provider.set_ip("192.168.1.1")
         self.ip_state.set_ip(IPvAnyAddress("192.168.1.1"))
+        self.hosts_repo.set_pending_hosts([])
 
         self.controller.handler()
 
         self.assertEqual(self.ip_provider.call_count, 1)
         self.assertEqual(len(self.dns_updater.calls), 0)
 
-    def test_handler_ip_unchanged_with_failed_hosts(self):
+    def test_handler_ip_unchanged_with_pending_hosts(self):
         """
-        Tests handler when IP hasn't changed but there are failed hosts to retry.
-        Should retry failed hosts.
+        Tests handler when IP hasn't changed but there are pending hosts.
+        Should update pending hosts.
         """
         self.ip_provider.set_ip("192.168.1.1")
         self.ip_state.set_ip(IPvAnyAddress("192.168.1.1"))
 
-        failed_host = HostConfig(hostname="example.com", username="user", password="pass")
-        self.controller.failed_hosts = [failed_host]
+        pending_host = HostConfig(hostname="example.com", username="user", password="pass")
+        self.hosts_repo.set_pending_hosts([pending_host])
 
         self.controller.handler()
 
         self.assertEqual(self.ip_provider.call_count, 1)
         self.assertEqual(len(self.dns_updater.calls), 1)
-        self.assertEqual(self.dns_updater.calls[0][0], failed_host)
+        self.assertEqual(self.dns_updater.calls[0][0], pending_host)
         self.assertEqual(str(self.dns_updater.calls[0][1]), "192.168.1.1")
 
     def test_handler_ip_changed(self):
@@ -177,10 +200,9 @@ class TestUpdateDnsController(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "DynDNS update failed")
 
-    def test_handler_ip_changed_with_update_failure(self):
+    def test_handler_ip_changed_calls_all_hosts(self):
         """
-        Tests handler when IP changes but some hosts fail to update.
-        Failed hosts should be tracked for retry on next run.
+        Tests handler when IP changes calls update on all hosts.
         """
         self.ip_provider.set_ip("192.168.1.2")
         self.ip_state.set_ip(IPvAnyAddress("192.168.1.1"))
@@ -189,78 +211,50 @@ class TestUpdateDnsController(unittest.TestCase):
         host2 = HostConfig(hostname="example2.com", username="user2", password="pass2")
         self.hosts_repo.set_hosts([host1, host2])
 
-        # First host succeeds, second fails
-        self.dns_updater.set_results([True, False])
+        self.dns_updater.set_results([(True, None), (False, "Test error")])
 
         self.controller.handler()
 
         # IP should be stored
         self.assertEqual(str(self.ip_state.get_ip()), "192.168.1.2")
-        # Second host should be in failed_hosts
-        self.assertEqual(len(self.controller.failed_hosts), 1)
-        self.assertEqual(self.controller.failed_hosts[0].hostname, "example2.com")
+        # Both hosts should be called
+        self.assertEqual(len(self.dns_updater.calls), 2)
 
-    def test_handler_retry_failed_hosts_success(self):
+    def test_handler_updates_pending_hosts_when_ip_unchanged(self):
         """
-        Tests that failed hosts are successfully retried when IP hasn't changed.
-        """
-        self.ip_provider.set_ip("192.168.1.1")
-        self.ip_state.set_ip(IPvAnyAddress("192.168.1.1"))
-
-        failed_host = HostConfig(hostname="failed.com", username="user", password="pass")
-        self.controller.failed_hosts = [failed_host]
-
-        # Retry succeeds
-        self.dns_updater.set_default_result(True)
-
-        self.controller.handler()
-
-        # failed_hosts should be cleared after successful retry
-        self.assertEqual(len(self.controller.failed_hosts), 0)
-
-    def test_handler_retry_failed_hosts_still_fails(self):
-        """
-        Tests that failed hosts remain in the list if retry fails.
+        Tests that pending hosts are updated when IP hasn't changed.
         """
         self.ip_provider.set_ip("192.168.1.1")
         self.ip_state.set_ip(IPvAnyAddress("192.168.1.1"))
 
-        failed_host = HostConfig(hostname="failed.com", username="user", password="pass")
-        self.controller.failed_hosts = [failed_host]
+        pending_host = HostConfig(hostname="pending.com", username="user", password="pass")
+        self.hosts_repo.set_pending_hosts([pending_host])
 
-        # Retry fails again
-        self.dns_updater.set_default_result(False)
+        self.dns_updater.set_default_result(True, None)
 
         self.controller.handler()
 
-        # Host should still be in failed_hosts
-        self.assertEqual(len(self.controller.failed_hosts), 1)
-        self.assertEqual(self.controller.failed_hosts[0].hostname, "failed.com")
+        self.assertEqual(len(self.dns_updater.calls), 1)
+        self.assertEqual(self.dns_updater.calls[0][0].hostname, "pending.com")
 
-    def test_handler_multiple_failed_hosts_partial_retry_success(self):
+    def test_handler_multiple_pending_hosts(self):
         """
-        Tests retry with multiple failed hosts where only some succeed.
+        Tests handler with multiple pending hosts.
         """
         self.ip_provider.set_ip("192.168.1.1")
         self.ip_state.set_ip(IPvAnyAddress("192.168.1.1"))
 
-        failed_host1 = HostConfig(hostname="failed1.com", username="user1", password="pass1")
-        failed_host2 = HostConfig(hostname="failed2.com", username="user2", password="pass2")
-        self.controller.failed_hosts = [failed_host1, failed_host2]
-
-        # First succeeds, second fails
-        self.dns_updater.set_results([True, False])
+        pending_host1 = HostConfig(hostname="pending1.com", username="user1", password="pass1")
+        pending_host2 = HostConfig(hostname="pending2.com", username="user2", password="pass2")
+        self.hosts_repo.set_pending_hosts([pending_host1, pending_host2])
 
         self.controller.handler()
 
-        # Only second host should remain failed
-        self.assertEqual(len(self.controller.failed_hosts), 1)
-        self.assertEqual(self.controller.failed_hosts[0].hostname, "failed2.com")
+        self.assertEqual(len(self.dns_updater.calls), 2)
 
     def test_update_hosts_ip_success(self):
         """
         Tests update_hosts_ip when all hosts update successfully.
-        Should clear failed_hosts.
         """
         host1 = HostConfig(hostname="example.com", username="user1", password="pass1")
         host2 = HostConfig(hostname="example2.com", username="user2", password="pass2")
@@ -270,69 +264,21 @@ class TestUpdateDnsController(unittest.TestCase):
         self.controller.update_hosts_ip(hosts, ip)
 
         self.assertEqual(len(self.dns_updater.calls), 2)
-        self.assertEqual(len(self.controller.failed_hosts), 0)
 
-    def test_update_hosts_ip_partial_failure(self):
+    def test_update_hosts_ip_calls_updater_for_each_host(self):
         """
-        Tests update_hosts_ip when some hosts fail to update.
-        Should track failed hosts.
+        Tests update_hosts_ip calls dns_updater for each host.
         """
         host1 = HostConfig(hostname="example.com", username="user1", password="pass1")
         host2 = HostConfig(hostname="example2.com", username="user2", password="pass2")
         hosts = [host1, host2]
 
-        self.dns_updater.set_results([True, False])
+        self.dns_updater.set_results([(True, None), (False, "Test error")])
 
         ip = IPvAnyAddress("192.168.1.1")
         self.controller.update_hosts_ip(hosts, ip)
 
         self.assertEqual(len(self.dns_updater.calls), 2)
-        self.assertEqual(len(self.controller.failed_hosts), 1)
-        self.assertEqual(self.controller.failed_hosts[0].hostname, "example2.com")
-
-    def test_update_hosts_ip_all_fail(self):
-        """
-        Tests update_hosts_ip when all hosts fail to update.
-        """
-        host1 = HostConfig(hostname="example.com", username="user1", password="pass1")
-        host2 = HostConfig(hostname="example2.com", username="user2", password="pass2")
-        hosts = [host1, host2]
-
-        self.dns_updater.set_default_result(False)
-
-        ip = IPvAnyAddress("192.168.1.1")
-        self.controller.update_hosts_ip(hosts, ip)
-
-        self.assertEqual(len(self.dns_updater.calls), 2)
-        self.assertEqual(len(self.controller.failed_hosts), 2)
-
-    def test_update_hosts_ip_clears_previous_failures(self):
-        """
-        Tests that update_hosts_ip clears previous failed hosts before processing.
-        """
-        previous_failed = HostConfig(hostname="old.com", username="user", password="pass")
-        self.controller.failed_hosts = [previous_failed]
-
-        host1 = HostConfig(hostname="example.com", username="user1", password="pass1")
-        hosts = [host1]
-
-        ip = IPvAnyAddress("192.168.1.1")
-        self.controller.update_hosts_ip(hosts, ip)
-
-        self.assertEqual(len(self.controller.failed_hosts), 0)
-
-    def test_update_hosts_ip_does_not_modify_input_list(self):
-        """
-        Tests that update_hosts_ip creates a copy of the hosts list and doesn't modify the input.
-        """
-        host1 = HostConfig(hostname="example.com", username="user1", password="pass1")
-        hosts = [host1]
-        original_length = len(hosts)
-
-        ip = IPvAnyAddress("192.168.1.1")
-        self.controller.update_hosts_ip(hosts, ip)
-
-        self.assertEqual(len(hosts), original_length)
 
     def test_update_hosts_ip_empty_list(self):
         """
@@ -343,7 +289,6 @@ class TestUpdateDnsController(unittest.TestCase):
         self.controller.update_hosts_ip(hosts, ip)
 
         self.assertEqual(len(self.dns_updater.calls), 0)
-        self.assertEqual(len(self.controller.failed_hosts), 0)
 
     def test_update_hosts_ip_passes_correct_ip_to_updater(self):
         """

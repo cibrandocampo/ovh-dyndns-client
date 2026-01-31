@@ -21,6 +21,6 @@ class Config:
             tuple[str, str]: (logger name, logger level)
         """
         return (
-            os.getenv("LOGGER_NAME", "ovh-dydns"),
+            os.getenv("LOGGER_NAME", "ovh-dyndns"),
             os.getenv("LOGGER_LEVEL", "INFO").upper(),
         )
