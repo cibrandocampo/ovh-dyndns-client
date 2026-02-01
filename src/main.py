@@ -103,7 +103,8 @@ def main():
 
     # Start FastAPI server
     logger.info(f"Starting API server on port {api_port}")
-    uvicorn.run(app, host="0.0.0.0", port=api_port, log_level="info")
+    log_config = Logger.get_uvicorn_log_config()
+    uvicorn.run(app, host="0.0.0.0", port=api_port, log_config=log_config)
 
 
 if __name__ == "__main__":
