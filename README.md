@@ -9,7 +9,7 @@
 
 A robust client for keeping OVH domains pointing to a dynamic IP address, with a web interface for easy management.
 
-![Dashboard](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard.png)
+![Dashboard Status](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-status.png)
 
 ## Features
 
@@ -54,6 +54,10 @@ Default credentials: `admin` / `admin` (password change required on first login)
 - **Hosts** - Add, edit, delete DNS hosts
 - **History** - View all IP changes and updates
 - **Settings** - Configure update interval and log level
+
+| Hosts | Settings |
+|:---:|:---:|
+| ![Hosts](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-hosts.png) | ![Settings](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-settings.png) |
 
 ## Documentation
 
