@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 import logging
-from infrastructure.logger import Logger
+from infrastructure.logger import Logger, ApiLogFormatter, LOG_FORMAT, LOG_DATE_FORMAT, API_LOGGER_NAME
 from infrastructure.config import Config
 
 
@@ -105,6 +105,106 @@ class TestLogger(unittest.TestCase):
             
             # Assert that the formatter's format matches the expected format
             self.assertEqual(handler.formatter._fmt, '%(asctime)s (%(name)s) %(levelname)s | %(message)s')
+
+
+class TestApiLogFormatter(unittest.TestCase):
+
+    def test_format_replaces_uvicorn_name(self):
+        """Tests that uvicorn logger names are replaced with 'ovh-api'."""
+        formatter = ApiLogFormatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
+        record = logging.LogRecord(
+            name="uvicorn.access",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="Test message",
+            args=(),
+            exc_info=None
+        )
+        formatted = formatter.format(record)
+        self.assertIn(f"({API_LOGGER_NAME})", formatted)
+        self.assertNotIn("uvicorn", formatted)
+        # Verify original name is restored
+        self.assertEqual(record.name, "uvicorn.access")
+
+    def test_format_replaces_uvicorn_error_name(self):
+        """Tests that uvicorn.error logger name is replaced with 'ovh-api'."""
+        formatter = ApiLogFormatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
+        record = logging.LogRecord(
+            name="uvicorn.error",
+            level=logging.ERROR,
+            pathname="",
+            lineno=0,
+            msg="Error message",
+            args=(),
+            exc_info=None
+        )
+        formatted = formatter.format(record)
+        self.assertIn(f"({API_LOGGER_NAME})", formatted)
+
+    def test_format_preserves_non_uvicorn_name(self):
+        """Tests that non-uvicorn logger names are preserved."""
+        formatter = ApiLogFormatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
+        record = logging.LogRecord(
+            name="custom-logger",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="Test message",
+            args=(),
+            exc_info=None
+        )
+        formatted = formatter.format(record)
+        self.assertIn("(custom-logger)", formatted)
+        self.assertNotIn(API_LOGGER_NAME, formatted)
+
+
+class TestUvicornLogConfig(unittest.TestCase):
+
+    def setUp(self):
+        Config._instance = None
+
+    def test_get_uvicorn_log_config_returns_dict(self):
+        """Tests that get_uvicorn_log_config returns a valid dict."""
+        config = Logger.get_uvicorn_log_config()
+        self.assertIsInstance(config, dict)
+        self.assertEqual(config["version"], 1)
+        self.assertIn("formatters", config)
+        self.assertIn("handlers", config)
+        self.assertIn("loggers", config)
+
+    def test_get_uvicorn_log_config_has_correct_loggers(self):
+        """Tests that the config contains uvicorn loggers."""
+        config = Logger.get_uvicorn_log_config()
+        self.assertIn("uvicorn", config["loggers"])
+        self.assertIn("uvicorn.error", config["loggers"])
+        self.assertIn("uvicorn.access", config["loggers"])
+
+    def test_get_uvicorn_log_config_uses_custom_formatter(self):
+        """Tests that the config uses ApiLogFormatter."""
+        config = Logger.get_uvicorn_log_config()
+        self.assertEqual(
+            config["formatters"]["default"]["()"],
+            "infrastructure.logger.ApiLogFormatter"
+        )
+        self.assertEqual(
+            config["formatters"]["access"]["()"],
+            "infrastructure.logger.ApiLogFormatter"
+        )
+
+    def test_get_uvicorn_log_config_with_custom_level(self):
+        """Tests that custom level is applied to uvicorn config."""
+        config = Logger.get_uvicorn_log_config(level="DEBUG")
+        self.assertEqual(config["loggers"]["uvicorn"]["level"], "DEBUG")
+        self.assertEqual(config["loggers"]["uvicorn.error"]["level"], "DEBUG")
+        self.assertEqual(config["loggers"]["uvicorn.access"]["level"], "DEBUG")
+
+    @patch.dict('os.environ', {'LOGGER_LEVEL': 'WARNING'})
+    def test_get_uvicorn_log_config_uses_env_level(self):
+        """Tests that level from environment is used when not specified."""
+        Config._instance = None
+        config = Logger.get_uvicorn_log_config()
+        self.assertEqual(config["loggers"]["uvicorn"]["level"], "WARNING")
 
 
 if __name__ == "__main__":
