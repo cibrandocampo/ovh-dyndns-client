@@ -1,4 +1,5 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
@@ -38,10 +39,7 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
 async def update_settings(settings: SettingsUpdate, current_user: dict = Depends(get_current_user)):
     """Update application settings."""
     repository = SqliteRepository()
-    result = repository.update_settings(
-        update_interval=settings.update_interval,
-        logger_level=settings.logger_level
-    )
+    result = repository.update_settings(update_interval=settings.update_interval, logger_level=settings.logger_level)
 
     # Notify about settings change
     if _on_settings_change:

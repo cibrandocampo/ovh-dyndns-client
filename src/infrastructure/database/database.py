@@ -1,7 +1,8 @@
 import os
 from contextlib import contextmanager
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from .models import Base
 
@@ -26,10 +27,7 @@ def init_db() -> None:
     db_path = os.getenv("DATABASE_PATH", DEFAULT_DATABASE_PATH)
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-    _engine = create_engine(
-        database_url,
-        connect_args={"check_same_thread": False}
-    )
+    _engine = create_engine(database_url, connect_args={"check_same_thread": False})
 
     Base.metadata.create_all(bind=_engine)
 

@@ -1,25 +1,23 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from infrastructure.database.database import init_db, get_db_session
-from infrastructure.database.models import User, Host, State, History, Settings
 from api.auth import hash_password
 from api.main import create_app
+from infrastructure.database.database import get_db_session, init_db
+from infrastructure.database.models import History, Host, Settings, State, User
 
 
 class TestAPI(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         """Set up test database and FastAPI client."""
-        cls.temp_db = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        cls.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         cls.temp_db.close()
-        os.environ['DATABASE_PATH'] = cls.temp_db.name
-        os.environ['JWT_SECRET'] = 'test-secret-key'
+        os.environ["DATABASE_PATH"] = cls.temp_db.name
+        os.environ["JWT_SECRET"] = "test-secret-key"
         init_db()
         cls.app = create_app()
         cls.client = TestClient(cls.app)
@@ -39,28 +37,18 @@ class TestAPI(unittest.TestCase):
             db.query(User).delete()
 
             # Create test user (not requiring password change for tests)
-            user = User(
-                username="testuser",
-                password_hash=hash_password("testpass"),
-                must_change_password=False
-            )
+            user = User(username="testuser", password_hash=hash_password("testpass"), must_change_password=False)
             db.add(user)
 
     def get_auth_header(self):
         """Get authentication header with valid token."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "testpass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
         token = response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
     def test_login_success(self):
         """Test successful login."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "testpass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("access_token", data)
@@ -69,10 +57,7 @@ class TestAPI(unittest.TestCase):
 
     def test_login_invalid_credentials(self):
         """Test login with invalid credentials."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "wrongpass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "wrongpass"})
         self.assertEqual(response.status_code, 401)
 
     def test_login_must_change_password(self):
@@ -81,36 +66,32 @@ class TestAPI(unittest.TestCase):
             user = db.query(User).filter(User.username == "testuser").first()
             user.must_change_password = True
 
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "testpass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["must_change_password"])
 
     def test_change_password(self):
         """Test password change."""
         headers = self.get_auth_header()
-        response = self.client.post("/api/auth/change-password", json={
-            "current_password": "testpass",
-            "new_password": "newpassword123"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/auth/change-password",
+            json={"current_password": "testpass", "new_password": "newpassword123"},
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 200)
 
         # Try login with new password
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "newpassword123"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "newpassword123"})
         self.assertEqual(response.status_code, 200)
 
     def test_change_password_wrong_current(self):
         """Test password change with wrong current password."""
         headers = self.get_auth_header()
-        response = self.client.post("/api/auth/change-password", json={
-            "current_password": "wrongpass",
-            "new_password": "newpassword123"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/auth/change-password",
+            json={"current_password": "wrongpass", "new_password": "newpassword123"},
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 400)
 
     def test_hosts_crud(self):
@@ -118,11 +99,11 @@ class TestAPI(unittest.TestCase):
         headers = self.get_auth_header()
 
         # Create host
-        response = self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "dnsuser",
-            "password": "dnspass"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "dnsuser", "password": "dnspass"},
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 201)
         host_id = response.json()["id"]
 
@@ -137,9 +118,7 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.json()["hostname"], "test.example.com")
 
         # Update host
-        response = self.client.put(f"/api/hosts/{host_id}", json={
-            "hostname": "updated.example.com"
-        }, headers=headers)
+        response = self.client.put(f"/api/hosts/{host_id}", json={"hostname": "updated.example.com"}, headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["hostname"], "updated.example.com")
 
@@ -155,17 +134,17 @@ class TestAPI(unittest.TestCase):
         """Test creating duplicate host."""
         headers = self.get_auth_header()
 
-        self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "user",
-            "password": "pass"
-        }, headers=headers)
+        self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "user", "password": "pass"},
+            headers=headers,
+        )
 
-        response = self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "user2",
-            "password": "pass2"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "user2", "password": "pass2"},
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 409)
 
     def test_status(self):
@@ -173,11 +152,11 @@ class TestAPI(unittest.TestCase):
         headers = self.get_auth_header()
 
         # Create a host first
-        self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "user",
-            "password": "pass"
-        }, headers=headers)
+        self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "user", "password": "pass"},
+            headers=headers,
+        )
 
         response = self.client.get("/api/status/", headers=headers)
         self.assertEqual(response.status_code, 200)
@@ -191,11 +170,11 @@ class TestAPI(unittest.TestCase):
         headers = self.get_auth_header()
 
         # Create some history by creating a host
-        self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "user",
-            "password": "pass"
-        }, headers=headers)
+        self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "user", "password": "pass"},
+            headers=headers,
+        )
 
         response = self.client.get("/api/history/", headers=headers)
         self.assertEqual(response.status_code, 200)
@@ -220,6 +199,7 @@ class TestAPI(unittest.TestCase):
 
         # Initialize settings
         from infrastructure.database import SqliteRepository
+
         SqliteRepository().init_default_settings()
 
         # Get settings
@@ -230,10 +210,9 @@ class TestAPI(unittest.TestCase):
         self.assertIn("logger_level", data)
 
         # Update settings
-        response = self.client.put("/api/settings/", json={
-            "update_interval": 600,
-            "logger_level": "DEBUG"
-        }, headers=headers)
+        response = self.client.put(
+            "/api/settings/", json={"update_interval": 600, "logger_level": "DEBUG"}, headers=headers
+        )
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["update_interval"], 600)
@@ -244,15 +223,11 @@ class TestAPI(unittest.TestCase):
         headers = self.get_auth_header()
 
         # Invalid interval (too low)
-        response = self.client.put("/api/settings/", json={
-            "update_interval": 10
-        }, headers=headers)
+        response = self.client.put("/api/settings/", json={"update_interval": 10}, headers=headers)
         self.assertEqual(response.status_code, 422)
 
         # Invalid log level
-        response = self.client.put("/api/settings/", json={
-            "logger_level": "INVALID"
-        }, headers=headers)
+        response = self.client.put("/api/settings/", json={"logger_level": "INVALID"}, headers=headers)
         self.assertEqual(response.status_code, 422)
 
     def test_unauthorized_access(self):

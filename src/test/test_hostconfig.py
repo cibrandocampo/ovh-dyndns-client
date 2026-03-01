@@ -1,5 +1,6 @@
 import unittest
-from pydantic import ValidationError, SecretStr
+
+from pydantic import SecretStr, ValidationError
 
 from domain.hostconfig import HostConfig
 
@@ -9,33 +10,21 @@ class TestHostConfig(unittest.TestCase):
 
     def test_create_valid_hostconfig(self):
         """Test creating a valid HostConfig instance."""
-        config = HostConfig(
-            hostname="example.com",
-            username="user",
-            password="secret"
-        )
+        config = HostConfig(hostname="example.com", username="user", password="secret")
         self.assertEqual(config.hostname, "example.com")
         self.assertEqual(config.username, "user")
         self.assertIsInstance(config.password, SecretStr)
 
     def test_password_is_secret(self):
         """Test that password is stored as SecretStr and hidden in string representation."""
-        config = HostConfig(
-            hostname="example.com",
-            username="user",
-            password="mysecretpassword"
-        )
+        config = HostConfig(hostname="example.com", username="user", password="mysecretpassword")
         # SecretStr should not reveal password in string representation
         self.assertNotIn("mysecretpassword", str(config))
         self.assertNotIn("mysecretpassword", repr(config))
 
     def test_password_get_secret_value(self):
         """Test that password can be retrieved using get_secret_value."""
-        config = HostConfig(
-            hostname="example.com",
-            username="user",
-            password="mysecretpassword"
-        )
+        config = HostConfig(hostname="example.com", username="user", password="mysecretpassword")
         self.assertEqual(config.password.get_secret_value(), "mysecretpassword")
 
     def test_missing_hostname_raises_error(self):
@@ -55,11 +44,7 @@ class TestHostConfig(unittest.TestCase):
 
     def test_from_dict_valid(self):
         """Test creating HostConfig from valid dictionary."""
-        data = {
-            "hostname": "test.example.com",
-            "username": "testuser",
-            "password": "testpass"
-        }
+        data = {"hostname": "test.example.com", "username": "testuser", "password": "testpass"}
         config = HostConfig.from_dict(data)
         self.assertEqual(config.hostname, "test.example.com")
         self.assertEqual(config.username, "testuser")
@@ -69,7 +54,7 @@ class TestHostConfig(unittest.TestCase):
         """Test that from_dict raises ValidationError when field is missing."""
         data = {
             "hostname": "test.example.com",
-            "username": "testuser"
+            "username": "testuser",
             # password is missing
         }
         with self.assertRaises(ValidationError):
@@ -81,7 +66,7 @@ class TestHostConfig(unittest.TestCase):
             "hostname": "test.example.com",
             "username": "testuser",
             "password": "testpass",
-            "extra_field": "should be ignored"
+            "extra_field": "should be ignored",
         }
         config = HostConfig.from_dict(data)
         self.assertEqual(config.hostname, "test.example.com")
@@ -89,59 +74,35 @@ class TestHostConfig(unittest.TestCase):
 
     def test_hostname_with_subdomain(self):
         """Test hostname with subdomain."""
-        config = HostConfig(
-            hostname="sub.domain.example.com",
-            username="user",
-            password="pass"
-        )
+        config = HostConfig(hostname="sub.domain.example.com", username="user", password="pass")
         self.assertEqual(config.hostname, "sub.domain.example.com")
 
     def test_hostname_with_ip_address(self):
         """Test hostname can be an IP address."""
-        config = HostConfig(
-            hostname="192.168.1.1",
-            username="user",
-            password="pass"
-        )
+        config = HostConfig(hostname="192.168.1.1", username="user", password="pass")
         self.assertEqual(config.hostname, "192.168.1.1")
 
     def test_empty_hostname_raises_error(self):
         """Test that empty hostname is allowed by Pydantic but can be validated."""
         # Pydantic allows empty strings by default
-        config = HostConfig(
-            hostname="",
-            username="user",
-            password="pass"
-        )
+        config = HostConfig(hostname="", username="user", password="pass")
         self.assertEqual(config.hostname, "")
 
     def test_special_characters_in_password(self):
         """Test password with special characters."""
         special_password = "p@$$w0rd!#%&*()[]{}|<>?~`"
-        config = HostConfig(
-            hostname="example.com",
-            username="user",
-            password=special_password
-        )
+        config = HostConfig(hostname="example.com", username="user", password=special_password)
         self.assertEqual(config.password.get_secret_value(), special_password)
 
     def test_unicode_in_fields(self):
         """Test unicode characters in fields."""
-        config = HostConfig(
-            hostname="例え.jp",
-            username="用户",
-            password="密码"
-        )
+        config = HostConfig(hostname="例え.jp", username="用户", password="密码")
         self.assertEqual(config.hostname, "例え.jp")
         self.assertEqual(config.username, "用户")
 
     def test_model_dict_serialization(self):
         """Test that model can be serialized to dict."""
-        config = HostConfig(
-            hostname="example.com",
-            username="user",
-            password="secret"
-        )
+        config = HostConfig(hostname="example.com", username="user", password="secret")
         data = config.model_dump()
         self.assertEqual(data["hostname"], "example.com")
         self.assertEqual(data["username"], "user")
@@ -149,16 +110,8 @@ class TestHostConfig(unittest.TestCase):
 
     def test_two_configs_with_same_values_are_equal(self):
         """Test that two HostConfig with same values are equal."""
-        config1 = HostConfig(
-            hostname="example.com",
-            username="user",
-            password="pass"
-        )
-        config2 = HostConfig(
-            hostname="example.com",
-            username="user",
-            password="pass"
-        )
+        config1 = HostConfig(hostname="example.com", username="user", password="pass")
+        config2 = HostConfig(hostname="example.com", username="user", password="pass")
         self.assertEqual(config1.hostname, config2.hostname)
         self.assertEqual(config1.username, config2.username)
 

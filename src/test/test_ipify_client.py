@@ -1,7 +1,9 @@
 import unittest
 from unittest.mock import patch
-from infrastructure.clients.ipify_client import IpifyClient
+
 import ipify
+
+from infrastructure.clients.ipify_client import IpifyClient
 
 
 class TestIpifyClient(unittest.TestCase):
@@ -10,9 +12,9 @@ class TestIpifyClient(unittest.TestCase):
     The tests verify the correct behavior of the method when the external ipify service
     returns a valid IP address or throws an exception.
     """
-    
-    @patch.object(ipify, 'get_ip')
-    @patch('infrastructure.logger.Logger.get_logger')
+
+    @patch.object(ipify, "get_ip")
+    @patch("infrastructure.logger.Logger.get_logger")
     def test_get_public_ip_success(self, mock_get_logger, mock_get_ip):
         """
         Test the successful retrieval of the public IP.
@@ -25,17 +27,17 @@ class TestIpifyClient(unittest.TestCase):
             mock_get_logger: The mock for the Logger's get_logger method.
             mock_get_ip: The mock for the ipify.get_ip method.
         """
-        mock_get_ip.return_value = '192.168.1.1'
-        
+        mock_get_ip.return_value = "192.168.1.1"
+
         client = IpifyClient()
         result = client.get_public_ip()
-        self.assertEqual(str(result), '192.168.1.1')
-        
+        self.assertEqual(str(result), "192.168.1.1")
+
         # Assert that the logger's info method was called with the expected log message
         mock_get_logger.return_value.info.assert_called_with("Retrieved public IP: 192.168.1.1")
-    
-    @patch.object(ipify, 'get_ip')
-    @patch('infrastructure.logger.Logger.get_logger')
+
+    @patch.object(ipify, "get_ip")
+    @patch("infrastructure.logger.Logger.get_logger")
     def test_get_public_ip_failure(self, mock_get_logger, mock_get_ip):
         """
         Test the failure scenario when ipify.get_ip raises an exception.
@@ -49,11 +51,11 @@ class TestIpifyClient(unittest.TestCase):
             mock_get_ip: The mock for the ipify.get_ip method.
         """
         mock_get_ip.side_effect = Exception("Network error")
-        
+
         client = IpifyClient()
-        
+
         with self.assertRaises(RuntimeError):
             client.get_public_ip()
-        
+
         # Assert that the logger's error method was called with the expected error message
         mock_get_logger.return_value.error.assert_called_with("Failed to retrieve public IP: Network error")

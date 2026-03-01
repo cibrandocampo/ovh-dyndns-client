@@ -3,8 +3,8 @@ import logging
 from infrastructure.config import Config
 
 # Common log format used across all loggers
-LOG_FORMAT = '%(asctime)s (%(name)s) %(levelname)s | %(message)s'
-LOG_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
+LOG_FORMAT = "%(asctime)s (%(name)s) %(levelname)s | %(message)s"
+LOG_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 # Logger names
 BACKEND_LOGGER_NAME = "ovh-dyndns"
@@ -24,8 +24,7 @@ class ApiLogFormatter(logging.Formatter):
         return result
 
 
-class Logger:        
-
+class Logger:
     @staticmethod
     def get_logger(name: str = None, level: str = None) -> logging.Logger:
         """

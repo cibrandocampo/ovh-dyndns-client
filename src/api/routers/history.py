@@ -1,4 +1,5 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
@@ -28,7 +29,7 @@ class HistoryResponse(BaseModel):
 async def get_history(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """Get paginated history of DNS updates and changes."""
     repository = SqliteRepository()
@@ -36,8 +37,5 @@ async def get_history(
     total = repository.get_history_count()
 
     return HistoryResponse(
-        entries=[HistoryEntry(**entry) for entry in entries],
-        total=total,
-        limit=limit,
-        offset=offset
+        entries=[HistoryEntry(**entry) for entry in entries], total=total, limit=limit, offset=offset
     )

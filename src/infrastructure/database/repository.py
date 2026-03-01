@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from pydantic import IPvAnyAddress, SecretStr
-from sqlalchemy.orm import Session
 
+from application.ports import HostsRepository, IpStateStore
 from domain.hostconfig import HostConfig
-from application.ports import IpStateStore, HostsRepository
-from .models import Host, State, History, User, Settings
+
 from .database import get_db_session
+from .models import History, Host, Settings, State, User
 
 
 class SqliteRepository(IpStateStore, HostsRepository):
@@ -41,11 +41,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
 
             # Log IP change in history
             if old_ip != ip_str:
-                history = History(
-                    ip=ip_str,
-                    action="ip_changed",
-                    details=f"IP changed from {old_ip} to {ip_str}"
-                )
+                history = History(ip=ip_str, action="ip_changed", details=f"IP changed from {old_ip} to {ip_str}")
                 db.add(history)
 
     def update_last_check(self) -> None:
@@ -65,11 +61,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
         with get_db_session() as db:
             hosts = db.query(Host).all()
             return [
-                HostConfig(
-                    hostname=host.hostname,
-                    username=host.username,
-                    password=SecretStr(host.password)
-                )
+                HostConfig(hostname=host.hostname, username=host.username, password=SecretStr(host.password))
                 for host in hosts
             ]
 
@@ -77,15 +69,10 @@ class SqliteRepository(IpStateStore, HostsRepository):
         """Get hosts that need updating (failed or never updated)."""
         with get_db_session() as db:
             from sqlalchemy import or_
-            hosts = db.query(Host).filter(
-                or_(Host.last_status == False, Host.last_status == None)
-            ).all()
+
+            hosts = db.query(Host).filter(or_(Host.last_status.is_(False), Host.last_status.is_(None))).all()
             return [
-                HostConfig(
-                    hostname=host.hostname,
-                    username=host.username,
-                    password=SecretStr(host.password)
-                )
+                HostConfig(hostname=host.hostname, username=host.username, password=SecretStr(host.password))
                 for host in hosts
             ]
 
@@ -95,11 +82,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
             host = db.query(Host).filter(Host.hostname == hostname).first()
             if not host:
                 return None
-            return HostConfig(
-                hostname=host.hostname,
-                username=host.username,
-                password=SecretStr(host.password)
-            )
+            return HostConfig(hostname=host.hostname, username=host.username, password=SecretStr(host.password))
 
     # Extended methods for API
 
@@ -115,7 +98,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                     "last_update": host.last_update.isoformat() if host.last_update else None,
                     "last_status": host.last_status,
                     "last_error": host.last_error,
-                    "created_at": host.created_at.isoformat() if host.created_at else None
+                    "created_at": host.created_at.isoformat() if host.created_at else None,
                 }
                 for host in hosts
             ]
@@ -133,25 +116,17 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "last_update": host.last_update.isoformat() if host.last_update else None,
                 "last_status": host.last_status,
                 "last_error": host.last_error,
-                "created_at": host.created_at.isoformat() if host.created_at else None
+                "created_at": host.created_at.isoformat() if host.created_at else None,
             }
 
     def create_host(self, hostname: str, username: str, password: str) -> dict:
         """Create a new host."""
         with get_db_session() as db:
-            host = Host(
-                hostname=hostname,
-                username=username,
-                password=password
-            )
+            host = Host(hostname=hostname, username=username, password=password)
             db.add(host)
             db.flush()
 
-            history = History(
-                action="host_created",
-                hostname=hostname,
-                details=f"Host {hostname} created"
-            )
+            history = History(action="host_created", hostname=hostname, details=f"Host {hostname} created")
             db.add(history)
 
             return {
@@ -161,10 +136,12 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "last_update": None,
                 "last_status": None,
                 "last_error": None,
-                "created_at": host.created_at.isoformat() if host.created_at else None
+                "created_at": host.created_at.isoformat() if host.created_at else None,
             }
 
-    def update_host(self, host_id: int, hostname: str = None, username: str = None, password: str = None) -> Optional[dict]:
+    def update_host(
+        self, host_id: int, hostname: str = None, username: str = None, password: str = None
+    ) -> Optional[dict]:
         """Update an existing host."""
         with get_db_session() as db:
             host = db.query(Host).filter(Host.id == host_id).first()
@@ -178,11 +155,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
             if password is not None:
                 host.password = password
 
-            history = History(
-                action="host_updated",
-                hostname=host.hostname,
-                details=f"Host {host.hostname} updated"
-            )
+            history = History(action="host_updated", hostname=host.hostname, details=f"Host {host.hostname} updated")
             db.add(history)
 
             return {
@@ -192,7 +165,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "last_update": host.last_update.isoformat() if host.last_update else None,
                 "last_status": host.last_status,
                 "last_error": host.last_error,
-                "created_at": host.created_at.isoformat() if host.created_at else None
+                "created_at": host.created_at.isoformat() if host.created_at else None,
             }
 
     def delete_host(self, host_id: int) -> bool:
@@ -205,11 +178,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
             hostname = host.hostname
             db.delete(host)
 
-            history = History(
-                action="host_deleted",
-                hostname=hostname,
-                details=f"Host {hostname} deleted"
-            )
+            history = History(action="host_deleted", hostname=hostname, details=f"Host {hostname} deleted")
             db.add(history)
 
             return True
@@ -224,11 +193,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 host.last_error = error
 
                 action = "host_updated" if success else "host_failed"
-                history = History(
-                    action=action,
-                    hostname=hostname,
-                    details=error if error else "DNS update successful"
-                )
+                history = History(action=action, hostname=hostname, details=error if error else "DNS update successful")
                 db.add(history)
 
     # State methods
@@ -240,7 +205,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
             if state:
                 return {
                     "current_ip": state.current_ip,
-                    "last_check": state.last_check.isoformat() if state.last_check else None
+                    "last_check": state.last_check.isoformat() if state.last_check else None,
                 }
             return {"current_ip": None, "last_check": None}
 
@@ -249,9 +214,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
     def get_history(self, limit: int = 50, offset: int = 0) -> List[dict]:
         """Get history entries with pagination."""
         with get_db_session() as db:
-            entries = db.query(History).order_by(
-                History.timestamp.desc()
-            ).offset(offset).limit(limit).all()
+            entries = db.query(History).order_by(History.timestamp.desc()).offset(offset).limit(limit).all()
 
             return [
                 {
@@ -260,7 +223,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                     "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
                     "action": entry.action,
                     "hostname": entry.hostname,
-                    "details": entry.details
+                    "details": entry.details,
                 }
                 for entry in entries
             ]
@@ -282,7 +245,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "id": user.id,
                 "username": user.username,
                 "password_hash": user.password_hash,
-                "must_change_password": user.must_change_password
+                "must_change_password": user.must_change_password,
             }
 
     def create_user(self, username: str, password_hash: str) -> dict:
@@ -295,7 +258,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "id": user.id,
                 "username": user.username,
                 "password_hash": user.password_hash,
-                "must_change_password": user.must_change_password
+                "must_change_password": user.must_change_password,
             }
 
     def user_exists(self, username: str) -> bool:
@@ -326,10 +289,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
         with get_db_session() as db:
             settings = db.query(Settings).filter(Settings.id == 1).first()
             if settings:
-                return {
-                    "update_interval": settings.update_interval,
-                    "logger_level": settings.logger_level
-                }
+                return {"update_interval": settings.update_interval, "logger_level": settings.logger_level}
             return {"update_interval": 300, "logger_level": "INFO"}
 
     def update_settings(self, update_interval: int = None, logger_level: str = None) -> dict:
@@ -347,14 +307,11 @@ class SqliteRepository(IpStateStore, HostsRepository):
 
             history = History(
                 action="settings_updated",
-                details=f"Settings updated: interval={settings.update_interval}, level={settings.logger_level}"
+                details=f"Settings updated: interval={settings.update_interval}, level={settings.logger_level}",
             )
             db.add(history)
 
-            return {
-                "update_interval": settings.update_interval,
-                "logger_level": settings.logger_level
-            }
+            return {"update_interval": settings.update_interval, "logger_level": settings.logger_level}
 
     def init_default_settings(self) -> None:
         """Initialize default settings if they don't exist."""

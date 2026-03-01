@@ -1,11 +1,12 @@
-import unittest
 import logging
+import unittest
 from typing import List, Optional
+
 from pydantic import IPvAnyAddress
 
-from domain.hostconfig import HostConfig
 from application.controller import UpdateDnsController
-from application.ports import IpProvider, DnsUpdater, IpStateStore, HostsRepository
+from application.ports import DnsUpdater, HostsRepository, IpProvider, IpStateStore
+from domain.hostconfig import HostConfig
 
 
 # Fake implementations of the ports for testing
@@ -94,7 +95,6 @@ class FakeHostsRepository(HostsRepository):
 
 
 class TestUpdateDnsController(unittest.TestCase):
-
     def setUp(self):
         """
         Sets up test environment with fake implementations.
@@ -111,7 +111,7 @@ class TestUpdateDnsController(unittest.TestCase):
             dns_updater=self.dns_updater,
             ip_state=self.ip_state,
             hosts_repo=self.hosts_repo,
-            logger=self.logger
+            logger=self.logger,
         )
 
     def test_handler_ip_unchanged_no_pending_hosts(self):
@@ -192,7 +192,7 @@ class TestUpdateDnsController(unittest.TestCase):
             dns_updater=self.dns_updater,
             ip_state=self.ip_state,
             hosts_repo=self.hosts_repo,
-            logger=self.logger
+            logger=self.logger,
         )
 
         with self.assertRaises(RuntimeError) as context:

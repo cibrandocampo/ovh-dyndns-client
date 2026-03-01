@@ -23,25 +23,20 @@ def get_jwt_expiration_hours() -> int:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return bcrypt.checkpw(
-        plain_password.encode('utf-8'),
-        hashed_password.encode('utf-8')
-    )
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def hash_password(password: str) -> str:
     """Hash a password for storage."""
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed.decode('utf-8')
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(hours=get_jwt_expiration_hours())
-    )
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(hours=get_jwt_expiration_hours()))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, get_jwt_secret(), algorithm=ALGORITHM)
 
