@@ -6,7 +6,6 @@ from infrastructure.config import Config
 
 
 class TestConfig(unittest.TestCase):
-
     def setUp(self):
         """Reset the Config singleton instance before each test."""
         Config._instance = None

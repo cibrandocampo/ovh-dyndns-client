@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from api.auth import verify_password, hash_password, create_access_token
+from api.auth import create_access_token, hash_password, verify_password
 from api.dependencies import get_current_user
 from infrastructure.database import SqliteRepository
 
@@ -52,10 +52,7 @@ async def change_password(request: ChangePasswordRequest, current_user: dict = D
     user = repository.get_user_by_username(current_user["username"])
 
     if not user or not verify_password(request.current_password, user["password_hash"]):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
 
     new_hash = hash_password(request.new_password)
     repository.update_user_password(current_user["username"], new_hash)

@@ -1,7 +1,8 @@
 import ipify
 from pydantic import IPvAnyAddress
-from infrastructure.logger import Logger
+
 from application.ports import IpProvider
+from infrastructure.logger import Logger
 
 
 class IpifyClient(IpProvider):

@@ -1,7 +1,8 @@
 import logging
 from typing import List, Tuple
+
+from application.ports import DnsUpdater, HostsRepository, IpProvider, IpStateStore
 from domain.hostconfig import HostConfig
-from application.ports import IpProvider, DnsUpdater, IpStateStore, HostsRepository
 
 
 class UpdateDnsController:
@@ -11,7 +12,7 @@ class UpdateDnsController:
         dns_updater: DnsUpdater,
         ip_state: IpStateStore,
         hosts_repo: HostsRepository,
-        logger: logging.Logger
+        logger: logging.Logger,
     ):
         self.ip_provider = ip_provider
         self.dns_updater = dns_updater
@@ -66,22 +67,14 @@ class UpdateDnsController:
         for host in hosts:
             try:
                 success, error_message = self.dns_updater.update_ip(host, ip)
-                self.hosts_repo.update_host_status(
-                    hostname=host.hostname,
-                    success=success,
-                    error=error_message
-                )
+                self.hosts_repo.update_host_status(hostname=host.hostname, success=success, error=error_message)
                 if success:
                     self.logger.info(f"{host.hostname} | Update successful")
                 else:
                     self.logger.warning(f"{host.hostname} | Update failed: {error_message}")
             except Exception as e:
                 self.logger.error(f"Error updating {host.hostname}: {e}")
-                self.hosts_repo.update_host_status(
-                    hostname=host.hostname,
-                    success=False,
-                    error=str(e)
-                )
+                self.hosts_repo.update_host_status(hostname=host.hostname, success=False, error=str(e))
 
     def force_update_host(self, hostname: str) -> Tuple[bool, str]:
         """

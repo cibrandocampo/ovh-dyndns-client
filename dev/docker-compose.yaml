@@ -16,6 +16,7 @@ services:
       API_PORT: 8000
       DATABASE_PATH: /app/data/dyndns.db
       JWT_SECRET: dev-secret-key-change-in-prod
+      ADMIN_PASSWORD: admin123
     volumes:
       - ../src/:/app
       - ./data:/app/data

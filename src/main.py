@@ -1,15 +1,16 @@
 import threading
 import time
+
 import uvicorn
 
-from infrastructure.database import init_db, SqliteRepository
-from infrastructure.logger import Logger
+from api.main import app, init_admin_user
+from api.routers.settings import set_settings_change_callback
+from api.routers.status import set_controller
+from application.controller import UpdateDnsController
 from infrastructure.clients.ipify_client import IpifyClient
 from infrastructure.clients.ovh_client import OvhClient
-from application.controller import UpdateDnsController
-from api.main import app, init_admin_user
-from api.routers.status import set_controller
-from api.routers.settings import set_settings_change_callback
+from infrastructure.database import SqliteRepository, init_db
+from infrastructure.logger import Logger
 
 # Initialize logger
 logger = Logger.get_logger()
@@ -79,11 +80,7 @@ def main():
 
     # Create controller with SQLite repository
     controller = UpdateDnsController(
-        ip_provider=ip_provider,
-        dns_updater=dns_updater,
-        ip_state=repository,
-        hosts_repo=repository,
-        logger=logger
+        ip_provider=ip_provider, dns_updater=dns_updater, ip_state=repository, hosts_repo=repository, logger=logger
     )
 
     # Set controller for API status endpoint
@@ -99,6 +96,7 @@ def main():
 
     # Get API port from environment
     import os
+
     api_port = int(os.getenv("API_PORT", "8000"))
 
     # Start FastAPI server

@@ -1,14 +1,15 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import requests
 from requests.auth import HTTPBasicAuth
+
 from domain.hostconfig import HostConfig
 from infrastructure.clients.ovh_client import OvhClient
 from infrastructure.config import Config
 
 
 class TestOvhClient(unittest.TestCase):
-
     def setUp(self):
         """
         Sets up a mock host configuration (`HostConfig`) and an instance of `OvhClient`

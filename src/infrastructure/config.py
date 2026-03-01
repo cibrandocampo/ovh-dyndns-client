@@ -5,6 +5,7 @@ class Config:
     """
     Handles environment-based configuration for the application.
     """
+
     _instance = None
 
     def __new__(cls):

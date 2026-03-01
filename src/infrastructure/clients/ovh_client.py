@@ -1,11 +1,12 @@
-import requests
-from requests.auth import HTTPBasicAuth
-from typing import Tuple, Optional
-from pydantic.networks import IPvAnyAddress
+from typing import Optional, Tuple
 
+import requests
+from pydantic.networks import IPvAnyAddress
+from requests.auth import HTTPBasicAuth
+
+from application.ports import DnsUpdater
 from domain.hostconfig import HostConfig
 from infrastructure.logger import Logger
-from application.ports import DnsUpdater
 
 HOST = "https://www.ovh.com"
 PATH = "/nic/update"
@@ -45,11 +46,8 @@ class OvhClient(DnsUpdater):
         Returns:
             HTTPBasicAuth: Authentication object for OVH API requests.
         """
-        self.logger.info(f'{host.hostname} | Authenticating as {host.username}')
-        return HTTPBasicAuth(
-            username=host.username,
-            password=host.password.get_secret_value()
-        )
+        self.logger.info(f"{host.hostname} | Authenticating as {host.username}")
+        return HTTPBasicAuth(username=host.username, password=host.password.get_secret_value())
 
     def _parse_response(self, response_text: str) -> Tuple[bool, Optional[str]]:
         """
@@ -84,13 +82,13 @@ class OvhClient(DnsUpdater):
         Returns:
             Tuple[bool, Optional[str]]: (success, error_message)
         """
-        url = f'{HOST}{PATH}?system={SYS_PARAM}&hostname={host.hostname}&myip={ip}'
+        url = f"{HOST}{PATH}?system={SYS_PARAM}&hostname={host.hostname}&myip={ip}"
         auth = self._get_auth(host)
 
         try:
-            self.logger.info(f'{host.hostname} | Updating IP to {ip}')
+            self.logger.info(f"{host.hostname} | Updating IP to {ip}")
             response = requests.get(url, auth=auth)
-            self.logger.info(f'{host.hostname} | Response: {response.status_code} {response.text}')
+            self.logger.info(f"{host.hostname} | Response: {response.status_code} {response.text}")
 
             if not response.ok:
                 return False, f"HTTP {response.status_code}: {response.reason}"
@@ -98,5 +96,5 @@ class OvhClient(DnsUpdater):
             return self._parse_response(response.text)
 
         except requests.RequestException as e:
-            self.logger.error(f'{host.hostname} | Request failed: {e}')
+            self.logger.error(f"{host.hostname} | Request failed: {e}")
             return False, f"Connection error: {str(e)}"

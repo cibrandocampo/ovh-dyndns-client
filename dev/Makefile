@@ -1,6 +1,6 @@
 # Development Makefile for OVH DynDNS Client
 
-.PHONY: help build up down shell test lint format clean logs
+.PHONY: help build up down shell test test-cov lint lint-fix format clean logs run
 
 # Default target
 help:
@@ -10,53 +10,59 @@ help:
 	@echo "  down      - Stop the development container"
 	@echo "  shell     - Open a shell in the development container"
 	@echo "  test      - Run tests in the development container"
-	@echo "  lint      - Run linting checks"
-	@echo "  format    - Format code with black"
+	@echo "  test-cov  - Run tests with coverage report"
+	@echo "  lint      - Run linting checks (ruff)"
+	@echo "  lint-fix  - Run linting and auto-fix issues (ruff)"
+	@echo "  format    - Format code (ruff)"
 	@echo "  clean     - Clean up containers and images"
 	@echo "  logs      - Show container logs"
+	@echo "  run       - Run the application in dev mode"
 
 # Build the development image
 build:
-	docker-compose build
+	docker compose -f docker-compose.yaml build
 
 # Start the development container
 up:
-	docker-compose up -d
+	docker compose -f docker-compose.yaml up -d
 
 # Stop the development container
 down:
-	docker-compose down
+	docker compose -f docker-compose.yaml down
 
 # Open a shell in the development container
 shell:
-	docker-compose exec ovh-dyndns-dev /bin/sh
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev bash
 
 # Run tests
 test:
-	docker-compose exec ovh-dyndns-dev python -m pytest /app/test/ -v
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ -v
 
 # Run tests with coverage
 test-cov:
-	docker-compose exec ovh-dyndns-dev python -m pytest /app/test/ --cov=/app/src --cov-report=html
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ --cov=. --cov-report=term-missing
 
 # Run linting
 lint:
-	docker-compose exec ovh-dyndns-dev flake8 /app/src
-	docker-compose exec ovh-dyndns-dev mypy /app/src
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev ruff check .
+
+# Run linting and auto-fix
+lint-fix:
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev ruff check --fix .
 
 # Format code
 format:
-	docker-compose exec ovh-dyndns-dev black /app/src
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev ruff format .
 
 # Clean up
 clean:
-	docker-compose down -v
+	docker compose -f docker-compose.yaml down -v
 	docker rmi ovh_dyndns:dev 2>/dev/null || true
 
 # Show logs
 logs:
-	docker-compose logs -f ovh-dyndns-dev
+	docker compose -f docker-compose.yaml logs -f ovh_dyndns_dev
 
 # Run the application in development mode
 run:
-	docker-compose exec ovh-dyndns-dev python /app/main.py
+	docker compose -f docker-compose.yaml exec ovh_dyndns_dev python main.py

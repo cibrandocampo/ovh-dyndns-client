@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Pre-commit hook — runs linters inside the dev Docker container.
+# Install with: bash scripts/install-hooks.sh
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+COMPOSE="docker compose -f dev/docker-compose.yaml"
+
+# ── Check that dev container is running ──────────────────────────────────────
+
+SERVICE="ovh-dyndns-dev"
+
+if ! $COMPOSE ps --status running --format '{{.Name}}' 2>/dev/null | grep -q ovh_dyndns_dev; then
+  echo -e "${RED}Pre-commit: dev container is not running.${NC}"
+  echo "Start the dev environment first:  docker compose -f dev/docker-compose.yaml up -d"
+  exit 1
+fi
+
+# ── ruff check ───────────────────────────────────────────────────────────────
+
+echo "Running ruff check..."
+if ! $COMPOSE exec -T -w /app "$SERVICE" ruff check .; then
+  echo -e "${RED}ruff check failed. Run: docker compose -f dev/docker-compose.yaml exec $SERVICE ruff check --fix .${NC}"
+  exit 1
+fi
+
+# ── ruff format ──────────────────────────────────────────────────────────────
+
+echo "Running ruff format --check..."
+if ! $COMPOSE exec -T -w /app "$SERVICE" ruff format --check .; then
+  echo -e "${RED}ruff format failed. Run: docker compose -f dev/docker-compose.yaml exec $SERVICE ruff format .${NC}"
+  exit 1
+fi
+
+# ── Done ─────────────────────────────────────────────────────────────────────
+
+echo -e "${GREEN}All lint checks passed.${NC}"
