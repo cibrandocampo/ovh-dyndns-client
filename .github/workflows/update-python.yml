@@ -44,7 +44,7 @@ jobs:
           HOSTS_APP_PATH: ${{ github.workspace }}/hosts.json
         run: |
           export PYTHONPATH=${{ github.workspace }}/src:$PYTHONPATH
-          python -m pytest test/ -v --cov=. --cov-report=term-missing --cov-report=xml --cov-fail-under=70
+          python -m pytest test/ -v --cov=. --cov-report=term-missing --cov-report=xml --cov-fail-under=90
 
   build-latest:
     needs: test
