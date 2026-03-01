@@ -1,4 +1,5 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -66,10 +67,10 @@ async def get_status(current_user: dict = Depends(get_current_user)):
                 hostname=h["hostname"],
                 last_update=h["last_update"],
                 last_status=h["last_status"],
-                last_error=h["last_error"]
+                last_error=h["last_error"],
             )
             for h in hosts
-        ]
+        ],
     )
 
 
@@ -77,10 +78,7 @@ async def get_status(current_user: dict = Depends(get_current_user)):
 async def trigger_update(current_user: dict = Depends(get_current_user)):
     """Trigger an immediate DNS update for all pending hosts."""
     if _controller is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Controller not initialized"
-        )
+        raise HTTPException(status_code=500, detail="Controller not initialized")
 
     try:
         _controller.handler()
@@ -93,10 +91,7 @@ async def trigger_update(current_user: dict = Depends(get_current_user)):
 async def trigger_host_update(hostname: str, current_user: dict = Depends(get_current_user)):
     """Force update a specific host's DNS record."""
     if _controller is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Controller not initialized"
-        )
+        raise HTTPException(status_code=500, detail="Controller not initialized")
 
     success, message = _controller.force_update_host(hostname)
     return TriggerResponse(message=message, success=success)

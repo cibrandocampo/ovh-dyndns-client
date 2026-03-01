@@ -1,18 +1,17 @@
 import os
 import unittest
 from datetime import timedelta
-from unittest.mock import patch
 
 from api.auth import (
-    hash_password,
-    verify_password,
+    DEFAULT_JWT_EXPIRATION_HOURS,
+    DEFAULT_JWT_SECRET,
     create_access_token,
     decode_token,
-    get_jwt_secret,
-    get_jwt_expiration_hours,
     get_admin_credentials,
-    DEFAULT_JWT_SECRET,
-    DEFAULT_JWT_EXPIRATION_HOURS
+    get_jwt_expiration_hours,
+    get_jwt_secret,
+    hash_password,
+    verify_password,
 )
 
 
@@ -66,12 +65,12 @@ class TestJWTToken(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment variables."""
-        os.environ['JWT_SECRET'] = 'test-jwt-secret-key'
+        os.environ["JWT_SECRET"] = "test-jwt-secret-key"
 
     def tearDown(self):
         """Clean up environment variables."""
-        if 'JWT_SECRET' in os.environ:
-            del os.environ['JWT_SECRET']
+        if "JWT_SECRET" in os.environ:
+            del os.environ["JWT_SECRET"]
 
     def test_create_access_token_contains_subject(self):
         """Test that created token contains the subject claim."""
@@ -128,7 +127,7 @@ class TestJWTToken(unittest.TestCase):
         token = create_access_token(data)
 
         # Change the secret
-        os.environ['JWT_SECRET'] = 'different-secret'
+        os.environ["JWT_SECRET"] = "different-secret"
         result = decode_token(token)
         self.assertIsNone(result)
 
@@ -138,40 +137,40 @@ class TestJWTConfiguration(unittest.TestCase):
 
     def tearDown(self):
         """Clean up environment variables after each test."""
-        for var in ['JWT_SECRET', 'JWT_EXPIRATION_HOURS']:
+        for var in ["JWT_SECRET", "JWT_EXPIRATION_HOURS"]:
             if var in os.environ:
                 del os.environ[var]
 
     def test_get_jwt_secret_from_env(self):
         """Test getting JWT secret from environment variable."""
-        os.environ['JWT_SECRET'] = 'my-custom-secret'
-        self.assertEqual(get_jwt_secret(), 'my-custom-secret')
+        os.environ["JWT_SECRET"] = "my-custom-secret"
+        self.assertEqual(get_jwt_secret(), "my-custom-secret")
 
     def test_get_jwt_secret_default(self):
         """Test getting default JWT secret when not set."""
-        if 'JWT_SECRET' in os.environ:
-            del os.environ['JWT_SECRET']
+        if "JWT_SECRET" in os.environ:
+            del os.environ["JWT_SECRET"]
         self.assertEqual(get_jwt_secret(), DEFAULT_JWT_SECRET)
 
     def test_get_jwt_expiration_hours_from_env(self):
         """Test getting JWT expiration from environment variable."""
-        os.environ['JWT_EXPIRATION_HOURS'] = '48'
+        os.environ["JWT_EXPIRATION_HOURS"] = "48"
         self.assertEqual(get_jwt_expiration_hours(), 48)
 
     def test_get_jwt_expiration_hours_default(self):
         """Test getting default JWT expiration when not set."""
-        if 'JWT_EXPIRATION_HOURS' in os.environ:
-            del os.environ['JWT_EXPIRATION_HOURS']
+        if "JWT_EXPIRATION_HOURS" in os.environ:
+            del os.environ["JWT_EXPIRATION_HOURS"]
         self.assertEqual(get_jwt_expiration_hours(), DEFAULT_JWT_EXPIRATION_HOURS)
 
     def test_get_jwt_expiration_hours_invalid_value(self):
         """Test that invalid expiration value returns default."""
-        os.environ['JWT_EXPIRATION_HOURS'] = 'not-a-number'
+        os.environ["JWT_EXPIRATION_HOURS"] = "not-a-number"
         self.assertEqual(get_jwt_expiration_hours(), DEFAULT_JWT_EXPIRATION_HOURS)
 
     def test_get_jwt_expiration_hours_float_value(self):
         """Test that float value returns default."""
-        os.environ['JWT_EXPIRATION_HOURS'] = '24.5'
+        os.environ["JWT_EXPIRATION_HOURS"] = "24.5"
         self.assertEqual(get_jwt_expiration_hours(), DEFAULT_JWT_EXPIRATION_HOURS)
 
 
@@ -180,36 +179,36 @@ class TestAdminCredentials(unittest.TestCase):
 
     def tearDown(self):
         """Clean up environment variables."""
-        for var in ['ADMIN_USERNAME', 'ADMIN_PASSWORD']:
+        for var in ["ADMIN_USERNAME", "ADMIN_PASSWORD"]:
             if var in os.environ:
                 del os.environ[var]
 
     def test_get_admin_credentials_from_env(self):
         """Test getting admin credentials from environment variables."""
-        os.environ['ADMIN_USERNAME'] = 'custom_admin'
-        os.environ['ADMIN_PASSWORD'] = 'custom_pass'
+        os.environ["ADMIN_USERNAME"] = "custom_admin"
+        os.environ["ADMIN_PASSWORD"] = "custom_pass"
         username, password = get_admin_credentials()
-        self.assertEqual(username, 'custom_admin')
-        self.assertEqual(password, 'custom_pass')
+        self.assertEqual(username, "custom_admin")
+        self.assertEqual(password, "custom_pass")
 
     def test_get_admin_credentials_defaults(self):
         """Test getting default admin credentials."""
-        if 'ADMIN_USERNAME' in os.environ:
-            del os.environ['ADMIN_USERNAME']
-        if 'ADMIN_PASSWORD' in os.environ:
-            del os.environ['ADMIN_PASSWORD']
+        if "ADMIN_USERNAME" in os.environ:
+            del os.environ["ADMIN_USERNAME"]
+        if "ADMIN_PASSWORD" in os.environ:
+            del os.environ["ADMIN_PASSWORD"]
         username, password = get_admin_credentials()
-        self.assertEqual(username, 'admin')
-        self.assertEqual(password, 'admin')
+        self.assertEqual(username, "admin")
+        self.assertEqual(password, "admin")
 
     def test_get_admin_credentials_partial_env(self):
         """Test getting credentials when only username is set."""
-        os.environ['ADMIN_USERNAME'] = 'myuser'
-        if 'ADMIN_PASSWORD' in os.environ:
-            del os.environ['ADMIN_PASSWORD']
+        os.environ["ADMIN_USERNAME"] = "myuser"
+        if "ADMIN_PASSWORD" in os.environ:
+            del os.environ["ADMIN_PASSWORD"]
         username, password = get_admin_credentials()
-        self.assertEqual(username, 'myuser')
-        self.assertEqual(password, 'admin')
+        self.assertEqual(username, "myuser")
+        self.assertEqual(password, "admin")
 
 
 if __name__ == "__main__":

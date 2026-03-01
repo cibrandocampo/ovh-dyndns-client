@@ -1,15 +1,14 @@
 import os
 import tempfile
-import time
 import unittest
 from datetime import timedelta
 
 from fastapi.testclient import TestClient
 
-from infrastructure.database.database import init_db, get_db_session
-from infrastructure.database.models import User, Host, State, History, Settings
-from api.auth import hash_password, create_access_token
+from api.auth import create_access_token, hash_password
 from api.main import create_app
+from infrastructure.database.database import get_db_session, init_db
+from infrastructure.database.models import History, Host, Settings, State, User
 
 
 class TestAPIExtended(unittest.TestCase):
@@ -18,10 +17,10 @@ class TestAPIExtended(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test database and FastAPI client."""
-        cls.temp_db = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        cls.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         cls.temp_db.close()
-        os.environ['DATABASE_PATH'] = cls.temp_db.name
-        os.environ['JWT_SECRET'] = 'test-secret-key-extended'
+        os.environ["DATABASE_PATH"] = cls.temp_db.name
+        os.environ["JWT_SECRET"] = "test-secret-key-extended"
         init_db()
         cls.app = create_app()
         cls.client = TestClient(cls.app)
@@ -40,19 +39,12 @@ class TestAPIExtended(unittest.TestCase):
             db.query(Settings).delete()
             db.query(User).delete()
 
-            user = User(
-                username="testuser",
-                password_hash=hash_password("testpass"),
-                must_change_password=False
-            )
+            user = User(username="testuser", password_hash=hash_password("testpass"), must_change_password=False)
             db.add(user)
 
     def get_auth_header(self):
         """Get authentication header with valid token."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "testpass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
         token = response.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
 
@@ -61,10 +53,7 @@ class TestAPIExtended(unittest.TestCase):
     def test_expired_token_rejected(self):
         """Test that expired tokens are rejected."""
         # Create token that expires immediately
-        expired_token = create_access_token(
-            data={"sub": "testuser"},
-            expires_delta=timedelta(seconds=-1)
-        )
+        expired_token = create_access_token(data={"sub": "testuser"}, expires_delta=timedelta(seconds=-1))
         headers = {"Authorization": f"Bearer {expired_token}"}
 
         response = self.client.get("/api/hosts/", headers=headers)
@@ -78,10 +67,7 @@ class TestAPIExtended(unittest.TestCase):
 
     def test_missing_bearer_prefix_rejected(self):
         """Test that tokens without Bearer prefix are rejected."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser",
-            "password": "testpass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
         token = response.json()["access_token"]
         headers = {"Authorization": token}  # Missing "Bearer " prefix
 
@@ -92,32 +78,22 @@ class TestAPIExtended(unittest.TestCase):
 
     def test_login_nonexistent_user(self):
         """Test login with non-existent user."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "nonexistent",
-            "password": "anypass"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "nonexistent", "password": "anypass"})
         self.assertEqual(response.status_code, 401)
 
     def test_login_empty_credentials(self):
         """Test login with empty credentials."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "",
-            "password": ""
-        })
+        response = self.client.post("/api/auth/login", json={"username": "", "password": ""})
         self.assertEqual(response.status_code, 401)
 
     def test_login_missing_username(self):
         """Test login with missing username field."""
-        response = self.client.post("/api/auth/login", json={
-            "password": "testpass"
-        })
+        response = self.client.post("/api/auth/login", json={"password": "testpass"})
         self.assertEqual(response.status_code, 422)
 
     def test_login_missing_password(self):
         """Test login with missing password field."""
-        response = self.client.post("/api/auth/login", json={
-            "username": "testuser"
-        })
+        response = self.client.post("/api/auth/login", json={"username": "testuser"})
         self.assertEqual(response.status_code, 422)
 
     # Password change edge cases
@@ -125,19 +101,27 @@ class TestAPIExtended(unittest.TestCase):
     def test_change_password_too_short(self):
         """Test password change with too short new password."""
         headers = self.get_auth_header()
-        response = self.client.post("/api/auth/change-password", json={
-            "current_password": "testpass",
-            "new_password": "short"  # Less than 6 characters
-        }, headers=headers)
+        response = self.client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "testpass",
+                "new_password": "short",  # Less than 6 characters
+            },
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 422)
 
     def test_change_password_same_as_current(self):
         """Test changing password to the same value."""
         headers = self.get_auth_header()
-        response = self.client.post("/api/auth/change-password", json={
-            "current_password": "testpass",
-            "new_password": "testpass"  # Same as current
-        }, headers=headers)
+        response = self.client.post(
+            "/api/auth/change-password",
+            json={
+                "current_password": "testpass",
+                "new_password": "testpass",  # Same as current
+            },
+            headers=headers,
+        )
         # This should still succeed as we don't prevent same passwords
         self.assertEqual(response.status_code, 200)
 
@@ -146,11 +130,9 @@ class TestAPIExtended(unittest.TestCase):
     def test_create_host_empty_hostname(self):
         """Test creating host with empty hostname."""
         headers = self.get_auth_header()
-        response = self.client.post("/api/hosts/", json={
-            "hostname": "",
-            "username": "user",
-            "password": "pass"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/hosts/", json={"hostname": "", "username": "user", "password": "pass"}, headers=headers
+        )
         # Pydantic validation may allow empty strings
         self.assertIn(response.status_code, [201, 422])
 
@@ -163,9 +145,7 @@ class TestAPIExtended(unittest.TestCase):
     def test_update_nonexistent_host(self):
         """Test updating a host that doesn't exist."""
         headers = self.get_auth_header()
-        response = self.client.put("/api/hosts/99999", json={
-            "hostname": "updated.example.com"
-        }, headers=headers)
+        response = self.client.put("/api/hosts/99999", json={"hostname": "updated.example.com"}, headers=headers)
         self.assertEqual(response.status_code, 404)
 
     def test_delete_nonexistent_host(self):
@@ -177,11 +157,11 @@ class TestAPIExtended(unittest.TestCase):
     def test_create_host_special_characters(self):
         """Test creating host with special characters in fields."""
         headers = self.get_auth_header()
-        response = self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "user@domain.com",
-            "password": "p@$$w0rd!#%"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "user@domain.com", "password": "p@$$w0rd!#%"},
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 201)
 
     def test_update_host_partial(self):
@@ -189,17 +169,15 @@ class TestAPIExtended(unittest.TestCase):
         headers = self.get_auth_header()
 
         # Create host
-        response = self.client.post("/api/hosts/", json={
-            "hostname": "test.example.com",
-            "username": "user",
-            "password": "pass"
-        }, headers=headers)
+        response = self.client.post(
+            "/api/hosts/",
+            json={"hostname": "test.example.com", "username": "user", "password": "pass"},
+            headers=headers,
+        )
         host_id = response.json()["id"]
 
         # Update only username
-        response = self.client.put(f"/api/hosts/{host_id}", json={
-            "username": "newuser"
-        }, headers=headers)
+        response = self.client.put(f"/api/hosts/{host_id}", json={"username": "newuser"}, headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["username"], "newuser")
         self.assertEqual(response.json()["hostname"], "test.example.com")
@@ -233,29 +211,36 @@ class TestAPIExtended(unittest.TestCase):
         headers = self.get_auth_header()
 
         from infrastructure.database import SqliteRepository
+
         SqliteRepository().init_default_settings()
 
         # Update only interval
-        response = self.client.put("/api/settings/", json={
-            "update_interval": 600
-        }, headers=headers)
+        response = self.client.put("/api/settings/", json={"update_interval": 600}, headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["update_interval"], 600)
 
     def test_settings_invalid_log_level(self):
         """Test settings with invalid log level."""
         headers = self.get_auth_header()
-        response = self.client.put("/api/settings/", json={
-            "logger_level": "TRACE"  # Not a valid level
-        }, headers=headers)
+        response = self.client.put(
+            "/api/settings/",
+            json={
+                "logger_level": "TRACE"  # Not a valid level
+            },
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 422)
 
     def test_settings_interval_too_low(self):
         """Test settings with interval below minimum."""
         headers = self.get_auth_header()
-        response = self.client.put("/api/settings/", json={
-            "update_interval": 5  # Too low
-        }, headers=headers)
+        response = self.client.put(
+            "/api/settings/",
+            json={
+                "update_interval": 5  # Too low
+            },
+            headers=headers,
+        )
         self.assertEqual(response.status_code, 422)
 
     # Status endpoint
@@ -274,6 +259,7 @@ class TestAPIExtended(unittest.TestCase):
 
         # Set IP in state
         from infrastructure.database import SqliteRepository
+
         repo = SqliteRepository()
         repo.set_ip("192.168.1.100")
 
@@ -303,7 +289,7 @@ class TestAPIExtended(unittest.TestCase):
         response = self.client.post(
             "/api/auth/login",
             content="username=testuser&password=testpass",
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         self.assertEqual(response.status_code, 422)
 

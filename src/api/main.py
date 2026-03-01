@@ -1,21 +1,18 @@
-import os
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pathlib import Path
 
-from .routers import auth_router, hosts_router, status_router, history_router, settings_router
-from .auth import hash_password, get_admin_credentials
-from infrastructure.database import init_db, SqliteRepository
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from infrastructure.database import SqliteRepository
+
+from .auth import get_admin_credentials, hash_password
+from .routers import auth_router, history_router, hosts_router, settings_router, status_router
 
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
-    application = FastAPI(
-        title="OVH DynDNS Client",
-        description="API for managing OVH DynDNS hosts",
-        version="1.0.0"
-    )
+    application = FastAPI(title="OVH DynDNS Client", description="API for managing OVH DynDNS hosts", version="1.0.0")
 
     # Include routers
     application.include_router(auth_router)
@@ -53,7 +50,9 @@ def init_admin_user():
     if not repository.user_exists(username):
         password_hash = hash_password(password)
         repository.create_user(username, password_hash)
-        print(f"Admin user '{username}' created with default password. User will be required to change it on first login.")
+        print(
+            f"Admin user '{username}' created with default password. User will be required to change it on first login."
+        )
     else:
         print(f"Admin user '{username}' already exists.")
 

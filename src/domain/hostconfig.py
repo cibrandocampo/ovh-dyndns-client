@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from pydantic import BaseModel, Field, SecretStr
 
 
 class HostConfig(BaseModel):
     """
     Represents host connection configuration with automatic validation.
     """
+
     hostname: str = Field(..., description="The hostname or IP address of the host.")
     username: str = Field(..., description="Username for authentication.")
     password: SecretStr = Field(..., description="Password for authentication.")

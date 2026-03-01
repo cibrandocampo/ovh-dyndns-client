@@ -1,11 +1,10 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime, timezone
 
-from infrastructure.database.database import init_db, get_db_session
+from infrastructure.database.database import get_db_session, init_db
+from infrastructure.database.models import History, Host, Settings, State, User
 from infrastructure.database.repository import SqliteRepository
-from infrastructure.database.models import User, Host, State, History, Settings
 
 
 class TestSqliteRepositoryExtended(unittest.TestCase):
@@ -14,9 +13,9 @@ class TestSqliteRepositoryExtended(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test database."""
-        cls.temp_db = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        cls.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         cls.temp_db.close()
-        os.environ['DATABASE_PATH'] = cls.temp_db.name
+        os.environ["DATABASE_PATH"] = cls.temp_db.name
         init_db()
 
     @classmethod
