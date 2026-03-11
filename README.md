@@ -1,15 +1,61 @@
 # DynDNS Client for OVH
 
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/cibrandocampo/ovh-dyndns-client)
-[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Image-blue?logo=docker)](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/cibrandocampo/ovh-dyndns-client)](https://github.com/cibrandocampo/ovh-dyndns-client/releases)
-[![Python](https://img.shields.io/badge/python-3.14-blue?logo=python)](https://www.python.org/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/cibrandocampo/ovh-dyndns-client)](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
-[![codecov](https://codecov.io/gh/cibrandocampo/ovh-dyndns-client/graph/badge.svg)](https://codecov.io/gh/cibrandocampo/ovh-dyndns-client)
+<p align="center">
+  <a href="https://github.com/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/badge/GitHub-Repository-blue?logo=github" alt="GitHub"/></a>
+  <a href="https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/badge/Docker%20Hub-Image-blue?logo=docker" alt="Docker Hub"/></a>
+  <a href="https://github.com/cibrandocampo/ovh-dyndns-client/releases"><img src="https://img.shields.io/github/v/release/cibrandocampo/ovh-dyndns-client" alt="GitHub release"/></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.14-blue?logo=python" alt="Python"/></a>
+  <a href="https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/docker/pulls/cibrandocampo/ovh-dyndns-client" alt="Docker Pulls"/></a>
+  <a href="https://codecov.io/gh/cibrandocampo/ovh-dyndns-client"><img src="https://codecov.io/gh/cibrandocampo/ovh-dyndns-client/graph/badge.svg" alt="codecov"/></a>
+  <a href="https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"/></a>
+</p>
 
-A robust client for keeping OVH domains pointing to a dynamic IP address, with a web interface for easy management.
+<p align="center">
+  <br/>
+  <i>Your IP changes. Your domains shouldn't.</i>
+  <br/>
+  Point your OVH domains to a dynamic IP and forget about it. One container, no dependencies, your server, your rules.
+</p>
 
-![Dashboard Status](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-status.png)
+---
+
+## A closer look — How it works?
+
+### Status — always know where you stand
+
+<img src="https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-status.png" align="right" width="380" alt="Dashboard showing current public IP and per-host DNS update status"/>
+
+The status page is the first thing you see — a clear snapshot of the current public IP and the state of every configured host. You know at a glance whether DNS records are in sync, when the last check ran, and whether any update failed.
+
+The client polls your public IP on a configurable interval. If it changed, all hosts are updated immediately. If an update fails — because OVH is temporarily unreachable or credentials are wrong — the error is recorded and the host retried on the next cycle automatically.
+
+<br clear="right"/>
+
+---
+
+### Hosts — one entry per domain record
+
+<img src="https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-hosts.png" align="left" width="380" alt="Hosts management screen with a list of configured OVH DynHost entries and their credentials"/>
+
+Each host corresponds to a DynHost entry in your OVH control panel. Add as many as you need — subdomains, multiple domains, different zones — each with its own OVH credentials. The client updates them all in parallel on every IP change.
+
+Creating a host takes seconds: hostname, OVH username, and password. That is all the client needs to keep the record in sync. Hosts can be edited or removed at any time without restarting the service.
+
+<br clear="left"/>
+
+---
+
+### Settings — tune the behaviour without touching a config file
+
+<img src="https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-settings.png" align="right" width="380" alt="Settings screen with update interval selector and log level dropdown"/>
+
+The check interval and log verbosity can be adjusted from the web interface at any time — no restart, no editing environment variables. Lower the interval if your IP changes frequently; raise it if you want to reduce external API calls.
+
+Log level controls how much detail appears in the container logs, useful when troubleshooting a failed update or verifying that a specific host was reached.
+
+<br clear="right"/>
+
+---
 
 ## Features
 
@@ -19,6 +65,8 @@ A robust client for keeping OVH domains pointing to a dynamic IP address, with a
 - **Auto-updates** — Detects IP changes and updates DNS records automatically
 - **Auto-retry** — Failed updates are retried on the next cycle
 - **Docker-ready** — Multi-architecture support (amd64, arm64, arm/v7)
+
+---
 
 ## Quick Start
 
@@ -48,23 +96,7 @@ docker compose up -d
 
 Default credentials: `admin` / `admin` (password change required on first login)
 
-## Web Interface
-
-| Hosts | Settings |
-|:---:|:---:|
-| ![Hosts](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-hosts.png) | ![Settings](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-settings.png) |
-
-- **Status** — Current public IP and per-host DNS update status
-- **Hosts** — Add, edit, and delete OVH DynHost entries
-- **History** — Full log of IP changes and update events
-- **Settings** — Configure update interval and log level
-
-## How It Works
-
-1. Retrieves the current public IP using [ipify](https://www.ipify.org/)
-2. Compares it with the IP stored in the local SQLite database
-3. If it changed, updates all configured OVH DNS records via the DynHost API
-4. Failed updates are tracked and retried automatically on the next cycle
+---
 
 ## Quality
 
@@ -76,6 +108,8 @@ Every change goes through a CI pipeline (GitHub Actions) with no shortcuts:
 
 The Codecov badge at the top of this page reflects the current state.
 
+---
+
 ## Docker images
 
 Pre-built multi-arch images (linux/amd64, linux/arm64, linux/arm/v7) are published to Docker Hub automatically.
@@ -86,6 +120,8 @@ Pre-built multi-arch images (linux/amd64, linux/arm64, linux/arm/v7) are publish
 | `stable` + `vX.Y.Z` | On GitHub release |
 
 Images are also rebuilt weekly to pick up base-image and dependency security patches.
+
+---
 
 ## Documentation
 
