@@ -10,28 +10,13 @@
   <a href="https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"/></a>
 </p>
 
-<p align="center">
-  <br/>
-  <i>Your IP changes. Your domains shouldn't.</i>
-  <br/>
-  Point your OVH domains to a dynamic IP and forget about it. One container, no dependencies, your server, your rules.
-</p>
+*Your IP changes. Your domains shouldn't.* Point your OVH domains to a dynamic IP and forget about it — one container, no external dependencies, your server, your rules.
+
+![Dashboard Status](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-status.png)
 
 ---
 
 ## A closer look — How it works?
-
-### Status — always know where you stand
-
-<img src="https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-status.png" align="right" width="380" alt="Dashboard showing current public IP and per-host DNS update status"/>
-
-The status page is the first thing you see — a clear snapshot of the current public IP and the state of every configured host. You know at a glance whether DNS records are in sync, when the last check ran, and whether any update failed.
-
-The client polls your public IP on a configurable interval. If it changed, all hosts are updated immediately. If an update fails — because OVH is temporarily unreachable or credentials are wrong — the error is recorded and the host retried on the next cycle automatically.
-
-<br clear="right"/>
-
----
 
 ### Hosts — one entry per domain record
 
