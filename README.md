@@ -89,7 +89,7 @@ Every change goes through a CI pipeline (GitHub Actions) with no shortcuts:
 
 - **Lint**: ruff check — enforces code style and catches common errors
 - **Format**: ruff format — consistent formatting across the codebase
-- **Tests**: pytest with a minimum **70% coverage** gate enforced in CI
+- **Tests**: pytest with a minimum **90% coverage** gate enforced in CI
 
 The Codecov badge at the top of this page reflects the current state.
 

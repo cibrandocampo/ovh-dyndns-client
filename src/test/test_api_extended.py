@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 from datetime import timedelta
+from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 
@@ -292,6 +293,116 @@ class TestAPIExtended(unittest.TestCase):
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         self.assertEqual(response.status_code, 422)
+
+    # Trigger endpoint with controller set
+
+    def test_trigger_update_with_controller_success(self):
+        """Test trigger endpoint when controller is set and update succeeds."""
+        from api.routers.status import set_controller
+
+        mock_controller = MagicMock()
+        set_controller(mock_controller)
+        try:
+            headers = self.get_auth_header()
+            response = self.client.post("/api/status/trigger", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json()["success"])
+            mock_controller.handler.assert_called_once()
+        finally:
+            set_controller(None)
+
+    def test_trigger_update_with_controller_exception(self):
+        """Test trigger endpoint when controller raises an exception."""
+        from api.routers.status import set_controller
+
+        mock_controller = MagicMock()
+        mock_controller.handler.side_effect = Exception("Update failed")
+        set_controller(mock_controller)
+        try:
+            headers = self.get_auth_header()
+            response = self.client.post("/api/status/trigger", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(response.json()["success"])
+            self.assertIn("Update failed", response.json()["message"])
+        finally:
+            set_controller(None)
+
+    def test_trigger_host_update_with_controller(self):
+        """Test per-host trigger endpoint when controller is set."""
+        from api.routers.status import set_controller
+
+        mock_controller = MagicMock()
+        mock_controller.force_update_host.return_value = (True, "Host updated successfully")
+        set_controller(mock_controller)
+        try:
+            headers = self.get_auth_header()
+            response = self.client.post("/api/status/trigger/example.com", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json()["success"])
+            mock_controller.force_update_host.assert_called_once_with("example.com")
+        finally:
+            set_controller(None)
+
+    def test_settings_change_callback_is_called(self):
+        """Test that settings change callback is invoked when settings are updated."""
+        from api.routers.settings import set_settings_change_callback
+
+        callback = MagicMock()
+        set_settings_change_callback(callback)
+        try:
+            from infrastructure.database import SqliteRepository
+
+            SqliteRepository().init_default_settings()
+
+            headers = self.get_auth_header()
+            self.client.put("/api/settings/", json={"update_interval": 120}, headers=headers)
+            callback.assert_called_once()
+        finally:
+            set_settings_change_callback(None)
+
+    # init_admin_user tests
+
+    def test_init_admin_user_creates_new_user(self):
+        """Test init_admin_user creates user when it doesn't exist."""
+        from api.main import init_admin_user
+
+        with get_db_session() as db:
+            db.query(User).delete()
+
+        os.environ["ADMIN_USERNAME"] = "newadmin"
+        os.environ["ADMIN_PASSWORD"] = "newadminpass"
+        try:
+            init_admin_user()
+            from infrastructure.database import SqliteRepository
+
+            self.assertTrue(SqliteRepository().user_exists("newadmin"))
+        finally:
+            del os.environ["ADMIN_USERNAME"]
+            del os.environ["ADMIN_PASSWORD"]
+
+    def test_init_admin_user_existing_user(self):
+        """Test init_admin_user is a no-op when user already exists."""
+        from api.main import init_admin_user
+
+        # testuser already exists from setUp
+        os.environ["ADMIN_USERNAME"] = "testuser"
+        os.environ["ADMIN_PASSWORD"] = "testpass"
+        try:
+            init_admin_user()  # Should not raise
+        finally:
+            del os.environ["ADMIN_USERNAME"]
+            del os.environ["ADMIN_PASSWORD"]
+
+    # Token payload edge case
+
+    def test_token_with_no_sub_rejected(self):
+        """Test that a token without 'sub' claim is rejected."""
+        from api.auth import create_access_token
+
+        token = create_access_token(data={"user": "testuser"})  # No 'sub' field
+        headers = {"Authorization": f"Bearer {token}"}
+        response = self.client.get("/api/hosts/", headers=headers)
+        self.assertEqual(response.status_code, 401)
 
 
 if __name__ == "__main__":

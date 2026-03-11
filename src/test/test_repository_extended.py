@@ -305,6 +305,80 @@ class TestSqliteRepositoryExtended(unittest.TestCase):
         settings = repo.get_settings()
         self.assertEqual(settings["update_interval"], 600)
 
+    # update_last_check tests
+
+    def test_update_last_check_creates_state_when_none_exists(self):
+        """Test update_last_check creates a new State row when none exists."""
+        repo = SqliteRepository()
+        # No state exists (setUp cleared all tables)
+        repo.update_last_check()
+
+        state = repo.get_state()
+        self.assertIsNotNone(state["last_check"])
+
+    def test_update_last_check_updates_existing_state(self):
+        """Test update_last_check updates last_check on existing state."""
+        repo = SqliteRepository()
+        repo.set_ip("10.0.0.1")  # Creates state row
+
+        import time
+
+        time.sleep(0.01)  # Ensure timestamp differs
+        repo.update_last_check()
+
+        state = repo.get_state()
+        self.assertIsNotNone(state["last_check"])
+
+    # get_pending_hosts tests
+
+    def test_get_pending_hosts_returns_failed_and_never_updated(self):
+        """Test get_pending_hosts returns hosts with failed or null status."""
+        repo = SqliteRepository()
+        # Create hosts with different statuses
+        repo.create_host("failed.example.com", "user1", "pass1")
+        repo.create_host("ok.example.com", "user2", "pass2")
+        repo.create_host("never.example.com", "user3", "pass3")
+
+        # Mark ok.example.com as successful
+        repo.update_host_status("ok.example.com", success=True)
+        # Mark failed.example.com as failed
+        repo.update_host_status("failed.example.com", success=False, error="DNS error")
+
+        pending = repo.get_pending_hosts()
+        pending_hostnames = [h.hostname for h in pending]
+
+        self.assertIn("failed.example.com", pending_hostnames)
+        self.assertIn("never.example.com", pending_hostnames)
+        self.assertNotIn("ok.example.com", pending_hostnames)
+
+    def test_get_pending_hosts_empty_when_all_ok(self):
+        """Test get_pending_hosts returns empty list when all hosts succeeded."""
+        repo = SqliteRepository()
+        repo.create_host("ok.example.com", "user", "pass")
+        repo.update_host_status("ok.example.com", success=True)
+
+        pending = repo.get_pending_hosts()
+        self.assertEqual(len(pending), 0)
+
+    # get_host_by_hostname tests
+
+    def test_get_host_by_hostname_returns_host(self):
+        """Test get_host_by_hostname returns HostConfig for existing host."""
+        repo = SqliteRepository()
+        repo.create_host("lookup.example.com", "user1", "pass1")
+
+        host = repo.get_host_by_hostname("lookup.example.com")
+
+        self.assertIsNotNone(host)
+        self.assertEqual(host.hostname, "lookup.example.com")
+        self.assertEqual(host.username, "user1")
+
+    def test_get_host_by_hostname_returns_none_for_missing(self):
+        """Test get_host_by_hostname returns None when host doesn't exist."""
+        repo = SqliteRepository()
+        result = repo.get_host_by_hostname("nonexistent.example.com")
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()
