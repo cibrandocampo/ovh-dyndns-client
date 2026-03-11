@@ -221,7 +221,7 @@ Follow the hexagonal architecture:
 4. **New database model** — add to `src/infrastructure/database/models.py`
 5. **Wire it up** — inject the new adapter in `main.py`
 
-Always write tests for new code. The CI coverage gate is 70%.
+Always write tests for new code. The CI coverage gate is 90%.
 
 ## Claude Code
 

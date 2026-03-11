@@ -94,6 +94,16 @@ class FakeHostsRepository(HostsRepository):
         self._pending_hosts = hosts
 
 
+class FakeDnsUpdaterRaises(DnsUpdater):
+    """DNS updater that raises an exception on update_ip."""
+
+    def __init__(self, exception: Exception):
+        self._exception = exception
+
+    def update_ip(self, host: HostConfig, ip) -> tuple:
+        raise self._exception
+
+
 class TestUpdateDnsController(unittest.TestCase):
     def setUp(self):
         """
@@ -315,6 +325,111 @@ class TestUpdateDnsController(unittest.TestCase):
 
         self.assertEqual(str(self.ip_state.get_ip()), "2001:db8::1")
         self.assertEqual(str(self.dns_updater.calls[0][1]), "2001:db8::1")
+
+    def test_update_hosts_ip_dns_updater_raises_exception(self):
+        """Tests update_hosts_ip when dns_updater.update_ip raises an exception.
+        Should catch the exception, update host status as failed, and continue."""
+        dns_updater = FakeDnsUpdaterRaises(Exception("Connection refused"))
+        controller = UpdateDnsController(
+            ip_provider=self.ip_provider,
+            dns_updater=dns_updater,
+            ip_state=self.ip_state,
+            hosts_repo=self.hosts_repo,
+            logger=self.logger,
+        )
+
+        host = HostConfig(hostname="example.com", username="user", password="pass")
+        ip = IPvAnyAddress("192.168.1.1")
+        controller.update_hosts_ip([host], ip)
+
+        self.assertEqual(len(self.hosts_repo.status_updates), 1)
+        hostname, success, error = self.hosts_repo.status_updates[0]
+        self.assertEqual(hostname, "example.com")
+        self.assertFalse(success)
+        self.assertIn("Connection refused", error)
+
+    def test_force_update_host_not_found(self):
+        """Tests force_update_host when the host doesn't exist."""
+        success, message = self.controller.force_update_host("nonexistent.com")
+
+        self.assertFalse(success)
+        self.assertIn("nonexistent.com", message)
+        self.assertIn("not found", message)
+
+    def test_force_update_host_success_with_stored_ip(self):
+        """Tests force_update_host when IP is already stored."""
+        host = HostConfig(hostname="example.com", username="user", password="pass")
+        self.hosts_repo.set_hosts([host])
+        self.ip_state.set_ip(IPvAnyAddress("10.0.0.1"))
+        self.dns_updater.set_default_result(True, None)
+
+        success, message = self.controller.force_update_host("example.com")
+
+        self.assertTrue(success)
+        self.assertIn("example.com", message)
+        self.assertIn("successfully", message)
+        self.assertEqual(len(self.dns_updater.calls), 1)
+
+    def test_force_update_host_failure_with_stored_ip(self):
+        """Tests force_update_host when the DNS update fails."""
+        host = HostConfig(hostname="example.com", username="user", password="pass")
+        self.hosts_repo.set_hosts([host])
+        self.ip_state.set_ip(IPvAnyAddress("10.0.0.1"))
+        self.dns_updater.set_default_result(False, "DNS error")
+
+        success, message = self.controller.force_update_host("example.com")
+
+        self.assertFalse(success)
+        self.assertEqual(message, "DNS error")
+
+    def test_force_update_host_no_stored_ip_fetches_from_provider(self):
+        """Tests force_update_host fetches IP from provider when none is stored."""
+        host = HostConfig(hostname="example.com", username="user", password="pass")
+        self.hosts_repo.set_hosts([host])
+        # ip_state has no IP (None by default)
+        self.ip_provider.set_ip("192.168.1.99")
+        self.dns_updater.set_default_result(True, None)
+
+        success, message = self.controller.force_update_host("example.com")
+
+        self.assertTrue(success)
+        self.assertEqual(self.ip_provider.call_count, 1)
+        self.assertEqual(str(self.ip_state.get_ip()), "192.168.1.99")
+
+    def test_force_update_host_exception_during_update(self):
+        """Tests force_update_host when dns_updater raises an exception."""
+        dns_updater = FakeDnsUpdaterRaises(Exception("Timeout"))
+        controller = UpdateDnsController(
+            ip_provider=self.ip_provider,
+            dns_updater=dns_updater,
+            ip_state=self.ip_state,
+            hosts_repo=self.hosts_repo,
+            logger=self.logger,
+        )
+
+        host = HostConfig(hostname="example.com", username="user", password="pass")
+        self.hosts_repo.set_hosts([host])
+        self.ip_state.set_ip(IPvAnyAddress("10.0.0.1"))
+
+        success, message = controller.force_update_host("example.com")
+
+        self.assertFalse(success)
+        self.assertIn("Timeout", message)
+        self.assertEqual(len(self.hosts_repo.status_updates), 1)
+        _, status_success, _ = self.hosts_repo.status_updates[0]
+        self.assertFalse(status_success)
+
+    def test_force_update_host_failure_with_none_error_message(self):
+        """Tests force_update_host returns 'Unknown error' when error message is None."""
+        host = HostConfig(hostname="example.com", username="user", password="pass")
+        self.hosts_repo.set_hosts([host])
+        self.ip_state.set_ip(IPvAnyAddress("10.0.0.1"))
+        self.dns_updater.set_default_result(False, None)
+
+        success, message = self.controller.force_update_host("example.com")
+
+        self.assertFalse(success)
+        self.assertEqual(message, "Unknown error")
 
 
 if __name__ == "__main__":
