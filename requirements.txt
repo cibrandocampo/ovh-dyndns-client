@@ -1,16 +1,16 @@
 # Core dependencies
-ipify-py==1.0.1
-pydantic==2.12.5
-requests==2.32.5
+ipify-py~=1.0.1
+pydantic~=2.12.5
+requests~=2.32.5
 
 # API
-fastapi>=0.109.0
-uvicorn>=0.27.0
+fastapi~=0.135.1
+uvicorn~=0.41.0
 
 # Database
-sqlalchemy>=2.0.0
+sqlalchemy~=2.0.48
 
 # Authentication
-python-jose[cryptography]>=3.3.0
-bcrypt>=4.0.0
-python-multipart>=0.0.6
+python-jose[cryptography]~=3.5.0
+bcrypt~=5.0.0
+python-multipart~=0.0.22
