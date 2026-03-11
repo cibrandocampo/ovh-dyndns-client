@@ -114,4 +114,6 @@ This project is developed with [Claude Code](https://claude.ai/code), Anthropic'
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE) © 2022 Cibrán Docampo Piñeiro.
+
+You are free to **use**, **modify**, **distribute**, and **self-host** this software — personally or commercially — as long as the original copyright notice is preserved. No warranty is provided.
