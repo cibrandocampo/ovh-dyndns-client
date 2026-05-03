@@ -136,6 +136,7 @@ This project is developed with [Claude Code](https://claude.ai/code), Anthropic'
 
 ## Links
 
+- [Project website](https://cibrandocampo.github.io/ovh-dyndns-client/) — Marketing landing with screenshots and self-host walkthrough
 - [GitHub Repository](https://github.com/cibrandocampo/ovh-dyndns-client)
 - [Docker Hub](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
 - [OVH DynHost Documentation](https://docs.ovh.com/gb/en/domains/hosting_dynhost/)
