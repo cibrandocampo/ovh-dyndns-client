@@ -1,0 +1,57 @@
+---
+const snippet = `# 1. Create docker-compose.yaml
+cat > docker-compose.yaml <<'YAML'
+services:
+  ovh-dyndns-client:
+    image: cibrandocampo/ovh-dyndns-client:stable
+    container_name: ovh-dyndns-client
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+YAML
+
+# 2. Start it
+mkdir -p data
+docker compose up -d
+
+# 3. Open http://localhost:8000 (default admin/admin, change required on first login)
+`
+---
+<section id="self-host" class="mx-auto max-w-4xl px-6 py-16 sm:py-24 border-t border-slate-800">
+  <div class="text-center mb-10">
+    <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Self-host in 5 minutes</h2>
+    <p class="mt-4 text-slate-400 max-w-2xl mx-auto">
+      One <code class="rounded bg-slate-800 px-1.5 py-0.5 text-sm text-slate-200">docker-compose.yaml</code>, one <code class="rounded bg-slate-800 px-1.5 py-0.5 text-sm text-slate-200">docker compose up</code>. Full reference in the README.
+    </p>
+  </div>
+  <div class="relative rounded-xl border border-slate-800 bg-slate-950/80 p-6 shadow-xl shadow-ovh-900/20">
+    <button
+      id="copy-install-snippet"
+      type="button"
+      class="absolute top-4 right-4 rounded-md border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+    >Copy</button>
+    <pre class="overflow-x-auto text-sm leading-relaxed text-slate-200"><code id="install-snippet">{snippet}</code></pre>
+  </div>
+  <p class="mt-6 text-center text-sm text-slate-400">
+    Full configuration reference:
+    <a class="text-brand hover:underline" href="https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/docs/CONFIGURATION.md">docs/CONFIGURATION.md</a>
+  </p>
+  <script is:inline>
+    (function () {
+      var btn = document.getElementById('copy-install-snippet')
+      var pre = document.getElementById('install-snippet')
+      if (!btn || !pre) return
+      btn.addEventListener('click', function () {
+        var text = pre.textContent || ''
+        if (!navigator.clipboard) return
+        navigator.clipboard.writeText(text).then(function () {
+          var previous = btn.textContent
+          btn.textContent = 'Copied ✓'
+          setTimeout(function () { btn.textContent = previous || 'Copy' }, 2000)
+        })
+      })
+    })()
+  </script>
+</section>

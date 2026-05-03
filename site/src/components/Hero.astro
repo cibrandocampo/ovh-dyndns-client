@@ -1,0 +1,47 @@
+---
+const badges = [
+  { label: 'Python 3.14' },
+  { label: 'FastAPI' },
+  { label: 'SQLite' },
+  { label: 'Docker multi-arch' },
+]
+---
+<section class="mx-auto max-w-5xl px-6 py-16 sm:py-24 text-center">
+  <img
+    src={`${import.meta.env.BASE_URL}/icons/pwa-512x512.png`}
+    class="mx-auto h-20 w-20"
+    alt="OVH DynDNS Client logo"
+    width="80"
+    height="80"
+  />
+  <h1 class="mt-6 text-4xl sm:text-5xl font-bold tracking-tight">OVH DynDNS Client</h1>
+  <p class="mt-4 text-xl text-slate-300">
+    <em>Your IP changes. Your domains shouldn't.</em>
+  </p>
+  <p class="mt-3 text-base text-slate-400 max-w-2xl mx-auto">
+    Point your OVH domains to a dynamic IP and forget about it — one container, no external dependencies, your server, your rules.
+  </p>
+  <div class="mt-6 flex flex-wrap justify-center gap-2">
+    {badges.map((b) => (
+      <span class="inline-flex items-center rounded-full bg-ovh-800 border border-ovh-700 px-3 py-1 text-xs font-medium text-slate-200">
+        {b.label}
+      </span>
+    ))}
+  </div>
+  <div class="mt-8">
+    <a
+      href="#self-host"
+      class="inline-flex items-center rounded-md bg-brand text-ovh-900 px-5 py-2.5 text-sm font-semibold hover:bg-yellow-300 transition"
+    >
+      Install in 5 minutes →
+    </a>
+  </div>
+  <div class="mt-12">
+    <img
+      src={`${import.meta.env.BASE_URL}/screenshots/dashboard-status.png`}
+      class="mx-auto rounded-lg border border-slate-800 shadow-2xl shadow-ovh-900/40 max-w-full"
+      alt="OVH DynDNS Client dashboard — status page with current IP and host status"
+      loading="eager"
+    />
+  </div>
+</section>

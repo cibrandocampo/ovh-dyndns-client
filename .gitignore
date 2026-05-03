@@ -125,9 +125,6 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
-
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -140,3 +137,9 @@ dmypy.json
 # Task files reference paths under this directory; the artefacts themselves
 # are not part of the repo.
 docs/tasks/evidence/
+
+# Astro landing site
+site/.astro
+site/node_modules
+site/dist
+site/public/screenshots

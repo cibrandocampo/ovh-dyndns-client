@@ -70,3 +70,24 @@ T013 ──→ T014 ──→ T015
 ```
 
 Cadena lineal: la pipeline es producer → consumer → orchestrator.
+
+---
+
+## Series T016–T019 — Landing page (Astro + Tailwind, deployed to GitHub Pages)
+
+Plan: [docs/plans/landing-page.md](../plans/landing-page.md)
+
+| ID | Title | Dependencies | Status | QA |
+|----|-------|-------------|--------|----|
+| T016 | Astro + Tailwind scaffold (`site/`) + Base layout + public assets | — | Completed | — |
+| T017 | Five components (Hero, HowItWorks, FeatureCard, SelfHost, Footer) + `index.astro` | T016 | Completed | — |
+| T018 | Build pipeline (`copy-screenshots.mjs` + Makefile `site-dev` / `site-build`) | T017 | Completed | — |
+| T019 | `site-deploy.yml` workflow + verify Pages URL responds 200 | T018 | Awaiting merge | — |
+
+### Execution order
+
+```
+T016 ──→ T017 ──→ T018 ──→ T019
+```
+
+Cadena lineal: scaffold → componentes → build pipeline → deploy. Cada paso depende del anterior porque añade un layer concreto (estructura, contenido, assets, CI).

@@ -4,11 +4,13 @@
 # Per-folder developer shortcuts (build, up, down, test, lint, format)
 # stay in `dev/Makefile` — run `make -C dev <target>` for those.
 
-.PHONY: help screenshots
+.PHONY: help screenshots site-dev site-build
 
 help:
 	@echo "Available top-level targets:"
 	@echo "  screenshots  Regenerate docs/dashboard-*.png from the seeded dev container"
+	@echo "  site-dev     Run the Astro landing dev server (http://localhost:4321/ovh-dyndns-client/)"
+	@echo "  site-build   Build the Astro landing into site/dist/"
 	@echo ""
 	@echo "Per-folder developer shortcuts live in dev/Makefile (build, up, test, lint, ...)."
 
@@ -28,3 +30,12 @@ screenshots:
 	@echo "==> Stopping app (container stays up)..."
 	-docker compose -f dev/docker-compose.yaml exec -T ovh-dyndns-dev sh -c "pkill -f 'python /app/main.py' 2>/dev/null"
 	@echo "==> Done. Review docs/dashboard-*.png and commit manually."
+
+site-dev:
+	@echo "==> Starting Astro dev server on http://localhost:4321/ovh-dyndns-client/"
+	cd site && npm run dev
+
+site-build:
+	@echo "==> Building Astro landing into site/dist/"
+	cd site && npm run build
+	@echo "==> Done. site/dist/ is ready for preview or deploy."
