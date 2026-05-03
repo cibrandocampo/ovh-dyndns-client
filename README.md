@@ -63,8 +63,9 @@ services:
     image: cibrandocampo/ovh-dyndns-client:stable
     container_name: ovh-dyndns-client
     restart: always
-    environment:
-      - JWT_SECRET=your-secret-key-min-32-chars-long!
+    # JWT_SECRET and ENCRYPTION_KEY are auto-generated under ./data on first
+    # start. Override only if you need fixed values across deployments — see
+    # docs/CONFIGURATION.md.
     ports:
       - "8000:8000"
     volumes:

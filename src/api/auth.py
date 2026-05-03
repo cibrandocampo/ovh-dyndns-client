@@ -3,15 +3,17 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 
-DEFAULT_JWT_SECRET = "change-this-secret-in-production"
+from infrastructure.secrets import get_or_create_jwt_secret
+
 DEFAULT_JWT_EXPIRATION_HOURS = 24
 ALGORITHM = "HS256"
 
 
 def get_jwt_secret() -> str:
-    return os.getenv("JWT_SECRET", DEFAULT_JWT_SECRET)
+    return get_or_create_jwt_secret()
 
 
 def get_jwt_expiration_hours() -> int:
@@ -46,7 +48,7 @@ def decode_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, get_jwt_secret(), algorithms=[ALGORITHM])
         return payload
-    except JWTError:
+    except PyJWTError:
         return None
 
 

@@ -18,6 +18,9 @@ class TestAPI(unittest.TestCase):
         cls.temp_db.close()
         os.environ["DATABASE_PATH"] = cls.temp_db.name
         os.environ["JWT_SECRET"] = "test-secret-key"
+        from cryptography.fernet import Fernet
+
+        os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode("utf-8")
         init_db()
         cls.app = create_app()
         cls.client = TestClient(cls.app)

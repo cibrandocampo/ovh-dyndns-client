@@ -5,6 +5,7 @@ from pydantic import IPvAnyAddress, SecretStr
 
 from application.ports import HostsRepository, IpStateStore
 from domain.hostconfig import HostConfig
+from infrastructure.crypto import decrypt_password, encrypt_password
 
 from .database import get_db_session
 from .models import History, Host, Settings, State, User
@@ -61,7 +62,11 @@ class SqliteRepository(IpStateStore, HostsRepository):
         with get_db_session() as db:
             hosts = db.query(Host).all()
             return [
-                HostConfig(hostname=host.hostname, username=host.username, password=SecretStr(host.password))
+                HostConfig(
+                    hostname=host.hostname,
+                    username=host.username,
+                    password=SecretStr(decrypt_password(host.password)),
+                )
                 for host in hosts
             ]
 
@@ -72,7 +77,11 @@ class SqliteRepository(IpStateStore, HostsRepository):
 
             hosts = db.query(Host).filter(or_(Host.last_status.is_(False), Host.last_status.is_(None))).all()
             return [
-                HostConfig(hostname=host.hostname, username=host.username, password=SecretStr(host.password))
+                HostConfig(
+                    hostname=host.hostname,
+                    username=host.username,
+                    password=SecretStr(decrypt_password(host.password)),
+                )
                 for host in hosts
             ]
 
@@ -82,7 +91,11 @@ class SqliteRepository(IpStateStore, HostsRepository):
             host = db.query(Host).filter(Host.hostname == hostname).first()
             if not host:
                 return None
-            return HostConfig(hostname=host.hostname, username=host.username, password=SecretStr(host.password))
+            return HostConfig(
+                hostname=host.hostname,
+                username=host.username,
+                password=SecretStr(decrypt_password(host.password)),
+            )
 
     # Extended methods for API
 
@@ -122,7 +135,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
     def create_host(self, hostname: str, username: str, password: str) -> dict:
         """Create a new host."""
         with get_db_session() as db:
-            host = Host(hostname=hostname, username=username, password=password)
+            host = Host(hostname=hostname, username=username, password=encrypt_password(password))
             db.add(host)
             db.flush()
 
@@ -153,7 +166,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
             if username is not None:
                 host.username = username
             if password is not None:
-                host.password = password
+                host.password = encrypt_password(password)
 
             history = History(action="host_updated", hostname=host.hostname, details=f"Host {host.hostname} updated")
             db.add(history)

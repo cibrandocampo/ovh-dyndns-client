@@ -9,8 +9,18 @@ from api.routers.status import set_controller
 from application.controller import UpdateDnsController
 from infrastructure.clients.ipify_client import IpifyClient
 from infrastructure.clients.ovh_client import OvhClient
-from infrastructure.database import SqliteRepository, init_db
+from infrastructure.database import (
+    SqliteRepository,
+    has_encrypted_hosts,
+    init_db,
+    migrate_plaintext_passwords,
+)
 from infrastructure.logger import Logger
+from infrastructure.secrets import (
+    encryption_key_exists,
+    get_or_create_encryption_key,
+    get_or_create_jwt_secret,
+)
 
 # Initialize logger
 logger = Logger.get_logger()
@@ -67,6 +77,30 @@ def main():
     # Initialize database
     logger.info("Initializing database")
     init_db()
+
+    # Auto-generate or load persisted JWT secret (fail-fast on its own only if
+    # the data dir is unwritable — handled by raising from secrets module).
+    get_or_create_jwt_secret()
+
+    # Refuse to start if there are encrypted hosts in the DB but no key file:
+    # generating a new key here would silently render every existing
+    # ciphertext undecryptable.
+    if has_encrypted_hosts() and not encryption_key_exists():
+        raise RuntimeError(
+            "Encryption key is missing but encrypted hosts found in database. "
+            "Restore data/.encryption_key or set ENCRYPTION_KEY env var."
+        )
+
+    # Auto-generate or load the encryption key (only reached when the
+    # consistency check above passes).
+    get_or_create_encryption_key()
+
+    # Idempotent: encrypt any host password still stored as plaintext from
+    # pre-encryption deployments. No-op on fresh installs and on subsequent
+    # boots once everything is already migrated.
+    migrated = migrate_plaintext_passwords()
+    if migrated:
+        logger.info(f"Encrypted {migrated} legacy plaintext host password(s)")
 
     # Create admin user if needed
     init_admin_user()
