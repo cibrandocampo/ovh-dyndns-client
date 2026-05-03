@@ -70,6 +70,24 @@ def on_settings_change(new_settings):
     logger.info(f"Settings changed: {new_settings}")
 
 
+def launch_scheduler(controller, repository):
+    """Start the scheduler thread, unless `DISABLE_SCHEDULER=1` is set.
+
+    Returns the started thread, or `None` when the env var disables it.
+    Extracted from `main()` so it can be unit-tested without booting the
+    rest of the application.
+    """
+    import os
+
+    if os.getenv("DISABLE_SCHEDULER") == "1":
+        logger.info("Scheduler disabled (DISABLE_SCHEDULER=1)")
+        return None
+    scheduler = SchedulerThread(controller, repository)
+    scheduler.start()
+    logger.info("Scheduler thread launched")
+    return scheduler
+
+
 def main():
     """Main entry point of the application."""
     logger.info("Starting OVH DynDNS client")
@@ -123,17 +141,12 @@ def main():
     # Set settings change callback
     set_settings_change_callback(on_settings_change)
 
-    # Start scheduler in background thread, unless explicitly disabled
-    # (e.g. during screenshot capture, where a fake-credential seed must
-    # not be clobbered by an immediate OVH-update tick).
-    import os
+    # Start the scheduler thread (unless `DISABLE_SCHEDULER=1`, e.g. during
+    # screenshot capture where a fake-credential seed must not be clobbered
+    # by an immediate OVH-update tick).
+    launch_scheduler(controller, repository)
 
-    if os.getenv("DISABLE_SCHEDULER") == "1":
-        logger.info("Scheduler disabled (DISABLE_SCHEDULER=1)")
-    else:
-        scheduler = SchedulerThread(controller, repository)
-        scheduler.start()
-        logger.info("Scheduler thread launched")
+    import os
 
     api_port = int(os.getenv("API_PORT", "8000"))
 
