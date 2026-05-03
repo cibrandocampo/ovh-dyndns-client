@@ -2,10 +2,9 @@
 
 <p align="center">
   <a href="https://github.com/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/badge/GitHub-Repository-blue?logo=github" alt="GitHub"/></a>
-  <a href="https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/badge/Docker%20Hub-Image-blue?logo=docker" alt="Docker Hub"/></a>
   <a href="https://github.com/cibrandocampo/ovh-dyndns-client/releases"><img src="https://img.shields.io/github/v/release/cibrandocampo/ovh-dyndns-client" alt="GitHub release"/></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.14-blue?logo=python" alt="Python"/></a>
-  <a href="https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/docker/pulls/cibrandocampo/ovh-dyndns-client" alt="Docker Pulls"/></a>
+  <a href="https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client"><img src="https://img.shields.io/docker/pulls/cibrandocampo/ovh-dyndns-client?label=Docker%20Hub&amp;logo=docker" alt="Docker Hub pulls"/></a>
   <a href="https://codecov.io/gh/cibrandocampo/ovh-dyndns-client"><img src="https://codecov.io/gh/cibrandocampo/ovh-dyndns-client/graph/badge.svg" alt="codecov"/></a>
   <a href="https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"/></a>
 </p>
@@ -22,14 +21,21 @@
 
 ---
 
-> [!NOTE]
-> **Upgrading from v4.3.0 or earlier?** First boot of the new image
-> auto-generates persisted secrets under `./data` and encrypts your OVH
-> host passwords at rest. Zero-touch — `docker compose pull && up -d`
-> is enough. Heads-up on the new behaviours (server-side forced password
-> change, rate limiting on `/api/auth/*`, critical `data/` directory):
+> [!IMPORTANT]
+> **Coming from v4.x.x or earlier? Read this before upgrading.**
 >
-> → **[Upgrade guide](docs/CONFIGURATION.md#migrating-from-a-previous-release)**
+> v5.0.0 makes `./data` load-bearing: a new `data/.encryption_key`
+> (auto-generated on first boot) protects every OVH password stored in
+> the database. **If you lose this file, those credentials become
+> permanently unrecoverable.** Back up `./data` immediately after the
+> first restart on v5.0.0, and on a regular schedule after that.
+>
+> The upgrade itself is zero-touch — `docker compose pull && up -d` is
+> enough. Other new behaviours to be aware of: the default `admin/admin`
+> password change is now server-enforced, and `/api/auth/*` is
+> rate-limited per IP.
+>
+> → **[Full upgrade guide](docs/CONFIGURATION.md#migrating-from-a-previous-release)**
 
 ---
 
