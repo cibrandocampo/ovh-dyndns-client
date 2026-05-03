@@ -83,6 +83,7 @@ function showSection(sectionId) {
             loadHosts();
             break;
         case 'history':
+            loadHistoryHostnames();
             loadHistory();
             break;
         case 'settings':
@@ -219,11 +220,14 @@ async function loadStatus() {
                 <td>${escapeHtml(host.hostname)}</td>
                 <td>${host.last_update ? new Date(host.last_update).toLocaleString() : 'Never'}</td>
                 <td class="${host.last_status === true ? 'status-success' : host.last_status === false ? 'status-error' : 'status-pending'}">
+                    <svg class="icon icon-sm"><use href="/static/icons.svg#${host.last_status === true ? 'i-check-circle' : host.last_status === false ? 'i-x-circle' : 'i-clock'}"/></svg>
                     ${host.last_status === true ? 'Success' : host.last_status === false ? 'Failed' : 'Pending'}
                 </td>
                 <td>${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
                 <td>
-                    <button class="btn btn-small btn-primary" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')">Force Update</button>
+                    <button class="btn-icon btn-icon-done" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')" aria-label="Force update">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -233,10 +237,9 @@ async function loadStatus() {
 }
 
 async function forceUpdateHost(hostname) {
-    const btn = event.target;
-    const originalText = btn.textContent;
+    const btn = event.target.closest('button');
     btn.disabled = true;
-    btn.textContent = 'Updating...';
+    btn.dataset.loading = 'true';
 
     try {
         const response = await API.post(`/api/status/trigger/${encodeURIComponent(hostname)}`, {});
@@ -253,14 +256,14 @@ async function forceUpdateHost(hostname) {
         showStatusMessage('Failed to update host', 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = originalText;
+        btn.dataset.loading = 'false';
     }
 }
 
 document.getElementById('trigger-update').addEventListener('click', async () => {
     const btn = document.getElementById('trigger-update');
     btn.disabled = true;
-    btn.textContent = 'Updating...';
+    btn.dataset.loading = 'true';
 
     try {
         const response = await API.post('/api/status/trigger', {});
@@ -277,7 +280,7 @@ document.getElementById('trigger-update').addEventListener('click', async () => 
         showStatusMessage('Failed to trigger update', 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Trigger Update Now';
+        btn.dataset.loading = 'false';
     }
 });
 
@@ -295,8 +298,14 @@ async function loadHosts() {
                 <td>${escapeHtml(host.username)}</td>
                 <td>${host.created_at ? new Date(host.created_at).toLocaleString() : '-'}</td>
                 <td>
-                    <button class="btn btn-small" onclick="editHost(${host.id})">Edit</button>
-                    <button class="btn btn-small btn-danger" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')">Delete</button>
+                    <span class="row-actions">
+                        <button class="btn-icon" onclick="editHost(${host.id})" aria-label="Edit host">
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
+                        </button>
+                        <button class="btn-icon btn-icon-delete" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')" aria-label="Delete host">
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-trash-2"/></svg>
+                        </button>
+                    </span>
                 </td>
             </tr>
         `).join('');
@@ -407,13 +416,41 @@ document.querySelectorAll('.close-modal').forEach(el => {
 
 // History
 let historyPage = 0;
+let historyHostnameFilter = '';
 const historyLimit = 20;
+
+async function loadHistoryHostnames() {
+    try {
+        const response = await API.get('/api/history/hostnames');
+        if (!response.ok) return;
+        const list = await response.json();
+        const select = document.getElementById('history-filter-hostname');
+        const previous = historyHostnameFilter;
+        // Keep "All hosts" first, then one option per hostname (alpha-sorted by backend).
+        select.innerHTML = '<option value="">All hosts</option>' +
+            list.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+        // Restore the user's choice if it still exists; otherwise reset to "All hosts".
+        if (previous && list.includes(previous)) {
+            select.value = previous;
+        } else {
+            select.value = '';
+            historyHostnameFilter = '';
+        }
+    } catch (error) {
+        console.error('Failed to load history hostnames:', error);
+    }
+}
 
 async function loadHistory(page = 0) {
     historyPage = page;
 
     try {
-        const response = await API.get(`/api/history/?limit=${historyLimit}&offset=${page * historyLimit}`);
+        const params = new URLSearchParams({
+            limit: String(historyLimit),
+            offset: String(page * historyLimit),
+        });
+        if (historyHostnameFilter) params.set('hostname', historyHostnameFilter);
+        const response = await API.get(`/api/history/?${params.toString()}`);
         const data = await response.json();
 
         const tbody = document.querySelector('#history-table tbody');
@@ -443,6 +480,11 @@ document.getElementById('next-page').addEventListener('click', () => {
     loadHistory(historyPage + 1);
 });
 
+document.getElementById('history-filter-hostname').addEventListener('change', (e) => {
+    historyHostnameFilter = e.target.value;
+    loadHistory(0);
+});
+
 // Settings
 async function loadSettings() {
     try {
@@ -453,6 +495,19 @@ async function loadSettings() {
         document.getElementById('logger-level').value = data.logger_level;
     } catch (error) {
         console.error('Failed to load settings:', error);
+    }
+
+    // App version is public (no auth) and rendered as small muted text at
+    // the bottom of the settings card. Failures are silent — the placeholder
+    // 'dev' from index.html stays visible.
+    try {
+        const response = await fetch('/api/version');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('app-version').textContent = data.version;
+        }
+    } catch (error) {
+        // ignore — keep the static placeholder
     }
 }
 

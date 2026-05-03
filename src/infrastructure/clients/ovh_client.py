@@ -11,6 +11,7 @@ from infrastructure.logger import Logger
 HOST = "https://www.ovh.com"
 PATH = "/nic/update"
 SYS_PARAM = "dyndns"
+OVH_HTTP_TIMEOUT = (5, 10)  # (connect, read) seconds
 
 # OVH DynHost response codes
 RESPONSE_MESSAGES = {
@@ -87,7 +88,7 @@ class OvhClient(DnsUpdater):
 
         try:
             self.logger.info(f"{host.hostname} | Updating IP to {ip}")
-            response = requests.get(url, auth=auth)
+            response = requests.get(url, auth=auth, timeout=OVH_HTTP_TIMEOUT)
             self.logger.info(f"{host.hostname} | Response: {response.status_code} {response.text}")
 
             if not response.ok:

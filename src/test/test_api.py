@@ -18,6 +18,9 @@ class TestAPI(unittest.TestCase):
         cls.temp_db.close()
         os.environ["DATABASE_PATH"] = cls.temp_db.name
         os.environ["JWT_SECRET"] = "test-secret-key"
+        from cryptography.fernet import Fernet
+
+        os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode("utf-8")
         init_db()
         cls.app = create_app()
         cls.client = TestClient(cls.app)
@@ -246,6 +249,16 @@ class TestAPI(unittest.TestCase):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "healthy")
+
+    def test_version_endpoint_is_public_and_returns_string(self):
+        """`/api/version` is unauthenticated and returns the build-injected version."""
+        response = self.client.get("/api/version")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIn("version", body)
+        self.assertIsInstance(body["version"], str)
+        # In tests APP_VERSION is unset, so the module default applies.
+        self.assertEqual(body["version"], "dev")
 
 
 if __name__ == "__main__":

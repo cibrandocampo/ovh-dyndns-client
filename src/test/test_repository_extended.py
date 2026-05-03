@@ -2,6 +2,8 @@ import os
 import tempfile
 import unittest
 
+from cryptography.fernet import Fernet
+
 from infrastructure.database.database import get_db_session, init_db
 from infrastructure.database.models import History, Host, Settings, State, User
 from infrastructure.database.repository import SqliteRepository
@@ -16,6 +18,7 @@ class TestSqliteRepositoryExtended(unittest.TestCase):
         cls.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         cls.temp_db.close()
         os.environ["DATABASE_PATH"] = cls.temp_db.name
+        os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode("utf-8")
         init_db()
 
     @classmethod

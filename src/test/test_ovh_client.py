@@ -127,6 +127,32 @@ class TestOvhClient(unittest.TestCase):
         self.assertIn("Connection error", error)
 
     @patch("requests.get")
+    def test_update_ip_handles_timeout(self, mock_get):
+        """A `requests.Timeout` must surface as a clean (False, error) tuple, not an unhandled exception."""
+        mock_get.side_effect = requests.Timeout("read timed out")
+
+        success, error = self.client.update_ip(self.mock_host, "192.168.1.1")
+        self.assertFalse(success)
+        self.assertIn("Connection error", error)
+
+    @patch("requests.get")
+    def test_update_ip_passes_timeout(self, mock_get):
+        """Verifies the OVH HTTP call carries the configured (connect, read) timeout."""
+        from infrastructure.clients.ovh_client import OVH_HTTP_TIMEOUT
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = "good 192.168.1.1"
+        mock_response.ok = True
+        mock_get.return_value = mock_response
+
+        self.client.update_ip(self.mock_host, "192.168.1.1")
+
+        # Timeout must be present in kwargs and equal the module constant.
+        _, kwargs = mock_get.call_args
+        self.assertEqual(kwargs.get("timeout"), OVH_HTTP_TIMEOUT)
+
+    @patch("requests.get")
     def test_update_ip_unknown_error(self, mock_get):
         """
         Tests the failure scenario with an unknown error response.

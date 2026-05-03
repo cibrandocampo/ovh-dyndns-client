@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .models import Base
+from .models import Base, Host
 
 DEFAULT_DATABASE_PATH = "/app/data/dyndns.db"
 
@@ -53,3 +53,36 @@ def get_db_session():
         raise
     finally:
         db.close()
+
+
+def has_encrypted_hosts() -> bool:
+    """True if any row in `hosts` carries the encrypted-password marker.
+
+    Used at startup to fail-fast when the encryption key is missing but
+    the database still holds Fernet ciphertext from a previous boot.
+    """
+    from infrastructure.crypto import ENCRYPTED_PREFIX
+
+    with get_db_session() as db:
+        return db.query(Host).filter(Host.password.like(f"{ENCRYPTED_PREFIX}%")).first() is not None
+
+
+def migrate_plaintext_passwords() -> int:
+    """Encrypt any host password still stored as plaintext.
+
+    Idempotent: rows already prefixed with `enc:v1:` are skipped, so it is
+    safe to call on every boot. Intended to run after `init_db()` and
+    before any code that reads `Host.password`.
+
+    Returns the number of rows migrated.
+    """
+    from infrastructure.crypto import encrypt_password, is_encrypted
+
+    migrated = 0
+    with get_db_session() as db:
+        hosts = db.query(Host).all()
+        for host in hosts:
+            if not is_encrypted(host.password):
+                host.password = encrypt_password(host.password)
+                migrated += 1
+    return migrated

@@ -2,7 +2,15 @@ import os
 import tempfile
 import unittest
 
-from infrastructure.database.database import get_db_session, init_db
+from cryptography.fernet import Fernet
+
+from infrastructure.crypto import ENCRYPTED_PREFIX, encrypt_password
+from infrastructure.database.database import (
+    get_db_session,
+    has_encrypted_hosts,
+    init_db,
+    migrate_plaintext_passwords,
+)
 from infrastructure.database.models import History, Host, Settings, State, User
 from infrastructure.database.repository import SqliteRepository
 
@@ -14,6 +22,7 @@ class TestSqliteRepository(unittest.TestCase):
         cls.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         cls.temp_db.close()
         os.environ["DATABASE_PATH"] = cls.temp_db.name
+        os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode("utf-8")
         init_db()
 
     @classmethod
@@ -221,6 +230,90 @@ class TestSqliteRepository(unittest.TestCase):
         settings = repo.get_settings()
         self.assertEqual(settings["update_interval"], 600)
         self.assertEqual(settings["logger_level"], "DEBUG")
+
+    # ── Encryption + migration tests (T008) ───────────────────────────
+
+    def test_create_host_persists_encrypted(self):
+        """Stored password must carry the ciphertext prefix, not plaintext."""
+        repo = SqliteRepository()
+        repo.create_host("enc.example.com", "user", "plain-pass")
+
+        with get_db_session() as db:
+            row = db.query(Host).filter_by(hostname="enc.example.com").first()
+            self.assertTrue(row.password.startswith(ENCRYPTED_PREFIX))
+            self.assertNotIn("plain-pass", row.password)
+
+    def test_get_hosts_returns_decrypted(self):
+        """`get_hosts` must materialise the original password in HostConfig."""
+        repo = SqliteRepository()
+        repo.create_host("rt.example.com", "u", "round-trip-pass")
+
+        hosts = repo.get_hosts()
+        self.assertEqual(len(hosts), 1)
+        self.assertEqual(hosts[0].password.get_secret_value(), "round-trip-pass")
+
+    def test_update_host_re_encrypts(self):
+        """`update_host` with a new password must replace the ciphertext."""
+        repo = SqliteRepository()
+        host = repo.create_host("upd.example.com", "u", "old-pass")
+        with get_db_session() as db:
+            old_ciphertext = db.query(Host).filter_by(id=host["id"]).first().password
+
+        repo.update_host(host["id"], password="new-pass")
+
+        with get_db_session() as db:
+            new_ciphertext = db.query(Host).filter_by(id=host["id"]).first().password
+        self.assertNotEqual(new_ciphertext, old_ciphertext)
+        self.assertTrue(new_ciphertext.startswith(ENCRYPTED_PREFIX))
+
+        # And the new value round-trips correctly.
+        cfg = repo.get_host_by_hostname("upd.example.com")
+        self.assertEqual(cfg.password.get_secret_value(), "new-pass")
+
+    def test_migrate_plaintext_passwords_encrypts_legacy(self):
+        """Rows with bare plaintext are upgraded; reads then return the original value."""
+        # Insert a legacy plaintext row directly, bypassing the repository.
+        with get_db_session() as db:
+            db.add(Host(hostname="legacy.example.com", username="u", password="legacy-pass"))
+
+        migrated = migrate_plaintext_passwords()
+        self.assertEqual(migrated, 1)
+
+        with get_db_session() as db:
+            row = db.query(Host).filter_by(hostname="legacy.example.com").first()
+            self.assertTrue(row.password.startswith(ENCRYPTED_PREFIX))
+
+        cfg = SqliteRepository().get_host_by_hostname("legacy.example.com")
+        self.assertEqual(cfg.password.get_secret_value(), "legacy-pass")
+
+    def test_migrate_plaintext_passwords_idempotent(self):
+        """Running the migration twice in a row leaves nothing extra to do."""
+        with get_db_session() as db:
+            db.add(Host(hostname="idem.example.com", username="u", password="x"))
+            db.add(Host(hostname="already.example.com", username="u", password=encrypt_password("y")))
+
+        first = migrate_plaintext_passwords()
+        second = migrate_plaintext_passwords()
+        self.assertEqual(first, 1)  # only the plaintext row migrated
+        self.assertEqual(second, 0)
+
+    # ── has_encrypted_hosts() (boot-time consistency check) ───────────
+
+    def test_has_encrypted_hosts_empty_db(self):
+        """Fresh database with no host rows returns False."""
+        self.assertFalse(has_encrypted_hosts())
+
+    def test_has_encrypted_hosts_only_plaintext(self):
+        """Legacy plaintext-only rows do not trip the check."""
+        with get_db_session() as db:
+            db.add(Host(hostname="plain.example.com", username="u", password="plaintext"))
+        self.assertFalse(has_encrypted_hosts())
+
+    def test_has_encrypted_hosts_with_encrypted_row(self):
+        """Any row carrying the `enc:v1:` prefix flips the check to True."""
+        with get_db_session() as db:
+            db.add(Host(hostname="enc.example.com", username="u", password=encrypt_password("p")))
+        self.assertTrue(has_encrypted_hosts())
 
 
 if __name__ == "__main__":

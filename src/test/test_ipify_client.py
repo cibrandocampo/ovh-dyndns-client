@@ -1,61 +1,78 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-import ipify
+import requests
 
-from infrastructure.clients.ipify_client import IpifyClient
+from infrastructure.clients.ipify_client import IPIFY_HTTP_TIMEOUT, IPIFY_URL, IpifyClient
 
 
 class TestIpifyClient(unittest.TestCase):
-    """
-    Unit tests for the IpifyClient class, specifically for the get_public_ip method.
-    The tests verify the correct behavior of the method when the external ipify service
-    returns a valid IP address or throws an exception.
+    """Unit tests for ``IpifyClient.get_public_ip``.
+
+    The client now talks to ``https://api.ipify.org`` directly via
+    ``requests``; tests mock the underlying HTTP call.
     """
 
-    @patch.object(ipify, "get_ip")
+    @patch("infrastructure.clients.ipify_client.requests.get")
     @patch("infrastructure.logger.Logger.get_logger")
-    def test_get_public_ip_success(self, mock_get_logger, mock_get_ip):
-        """
-        Test the successful retrieval of the public IP.
-
-        This test mocks the ipify.get_ip method to return a predefined IP address
-        ('192.168.1.1'). It then checks whether the get_public_ip method returns the
-        correct IP and whether the logger's info method was called with the expected message.
-
-        Args:
-            mock_get_logger: The mock for the Logger's get_logger method.
-            mock_get_ip: The mock for the ipify.get_ip method.
-        """
-        mock_get_ip.return_value = "192.168.1.1"
+    def test_get_public_ip_success(self, mock_get_logger, mock_get):
+        """Successful retrieval returns the parsed IP and is logged."""
+        mock_response = MagicMock(text="192.168.1.1")
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
 
         client = IpifyClient()
         result = client.get_public_ip()
-        self.assertEqual(str(result), "192.168.1.1")
 
-        # Assert that the logger's info method was called with the expected log message
+        self.assertEqual(str(result), "192.168.1.1")
+        mock_get.assert_called_once_with(IPIFY_URL, timeout=IPIFY_HTTP_TIMEOUT)
         mock_get_logger.return_value.info.assert_called_with("Retrieved public IP: 192.168.1.1")
 
-    @patch.object(ipify, "get_ip")
+    @patch("infrastructure.clients.ipify_client.requests.get")
     @patch("infrastructure.logger.Logger.get_logger")
-    def test_get_public_ip_failure(self, mock_get_logger, mock_get_ip):
-        """
-        Test the failure scenario when ipify.get_ip raises an exception.
-
-        This test mocks the ipify.get_ip method to raise an exception. It then checks
-        that the get_public_ip method raises a RuntimeError and verifies that the
-        logger's error method is called with the correct error message.
-
-        Args:
-            mock_get_logger: The mock for the Logger's get_logger method.
-            mock_get_ip: The mock for the ipify.get_ip method.
-        """
-        mock_get_ip.side_effect = Exception("Network error")
+    def test_get_public_ip_strips_whitespace(self, mock_get_logger, mock_get):
+        """Trailing whitespace from the upstream response must not break IP parsing."""
+        mock_response = MagicMock(text="10.0.0.1\n")
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
 
         client = IpifyClient()
+        result = client.get_public_ip()
+        self.assertEqual(str(result), "10.0.0.1")
 
+    @patch("infrastructure.clients.ipify_client.requests.get")
+    @patch("infrastructure.logger.Logger.get_logger")
+    def test_get_public_ip_raises_on_request_exception(self, mock_get_logger, mock_get):
+        """Network errors from ``requests`` are wrapped in ``RuntimeError``."""
+        mock_get.side_effect = requests.RequestException("Network error")
+
+        client = IpifyClient()
+        with self.assertRaises(RuntimeError):
+            client.get_public_ip()
+        mock_get_logger.return_value.error.assert_called_with("Failed to retrieve public IP: Network error")
+
+    @patch("infrastructure.clients.ipify_client.requests.get")
+    @patch("infrastructure.logger.Logger.get_logger")
+    def test_get_public_ip_raises_on_timeout(self, mock_get_logger, mock_get):
+        """A read timeout must bubble up as a RuntimeError, not freeze the scheduler."""
+        mock_get.side_effect = requests.Timeout("read timed out")
+
+        client = IpifyClient()
         with self.assertRaises(RuntimeError):
             client.get_public_ip()
 
-        # Assert that the logger's error method was called with the expected error message
-        mock_get_logger.return_value.error.assert_called_with("Failed to retrieve public IP: Network error")
+    @patch("infrastructure.clients.ipify_client.requests.get")
+    @patch("infrastructure.logger.Logger.get_logger")
+    def test_get_public_ip_raises_on_invalid_ip(self, mock_get_logger, mock_get):
+        """Non-IP responses (HTML error page, garbage) are also handled cleanly."""
+        mock_response = MagicMock(text="not-an-ip")
+        mock_response.raise_for_status = MagicMock()
+        mock_get.return_value = mock_response
+
+        client = IpifyClient()
+        with self.assertRaises(RuntimeError):
+            client.get_public_ip()
+
+
+if __name__ == "__main__":
+    unittest.main()

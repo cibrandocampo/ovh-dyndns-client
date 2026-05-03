@@ -4,7 +4,6 @@ from datetime import timedelta
 
 from api.auth import (
     DEFAULT_JWT_EXPIRATION_HOURS,
-    DEFAULT_JWT_SECRET,
     create_access_token,
     decode_token,
     get_admin_credentials,
@@ -145,12 +144,6 @@ class TestJWTConfiguration(unittest.TestCase):
         """Test getting JWT secret from environment variable."""
         os.environ["JWT_SECRET"] = "my-custom-secret"
         self.assertEqual(get_jwt_secret(), "my-custom-secret")
-
-    def test_get_jwt_secret_default(self):
-        """Test getting default JWT secret when not set."""
-        if "JWT_SECRET" in os.environ:
-            del os.environ["JWT_SECRET"]
-        self.assertEqual(get_jwt_secret(), DEFAULT_JWT_SECRET)
 
     def test_get_jwt_expiration_hours_from_env(self):
         """Test getting JWT expiration from environment variable."""

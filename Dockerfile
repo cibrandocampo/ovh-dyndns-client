@@ -32,6 +32,12 @@ RUN pip install --no-cache /wheels/* && rm -r /wheels
 
 COPY ./src /app
 
+# Build-time injected version string (CI passes the output of
+# `git describe --tags --always --abbrev=5`). Defaults to "dev" so local
+# builds without --build-arg work without surprises.
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
+
 # Expose API port
 EXPOSE 8000
 
