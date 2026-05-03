@@ -568,11 +568,6 @@ body {
     margin-right: 0.5rem;
 }
 
-/* ── Highlighted card for the current IP (border-left brand yellow) ── */
-.card-ip {
-    border-left: 3px solid var(--c-brand);
-}
-
 /* ── External link (indigo accent — reserved for OVH panel/docs links) ── */
 .link-external {
     color: var(--c-shared);
