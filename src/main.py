@@ -123,13 +123,17 @@ def main():
     # Set settings change callback
     set_settings_change_callback(on_settings_change)
 
-    # Start scheduler in background thread
-    scheduler = SchedulerThread(controller, repository)
-    scheduler.start()
-    logger.info("Scheduler thread launched")
-
-    # Get API port from environment
+    # Start scheduler in background thread, unless explicitly disabled
+    # (e.g. during screenshot capture, where a fake-credential seed must
+    # not be clobbered by an immediate OVH-update tick).
     import os
+
+    if os.getenv("DISABLE_SCHEDULER") == "1":
+        logger.info("Scheduler disabled (DISABLE_SCHEDULER=1)")
+    else:
+        scheduler = SchedulerThread(controller, repository)
+        scheduler.start()
+        logger.info("Scheduler thread launched")
 
     api_port = int(os.getenv("API_PORT", "8000"))
 

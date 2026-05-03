@@ -41,6 +41,12 @@ This directory contains the development setup for the OVH DynDNS Client project.
 | `make logs` | Show container logs |
 | `make clean` | Clean up containers and images |
 
+### Project-root targets (run from the repo root, not from `dev/`)
+
+| Command | Description |
+|---------|-------------|
+| `make screenshots` | Regenerate `docs/dashboard-*.png` from the seeded dev container. Wipes `dev/data` via the seed's `--reset`, boots the app with `DISABLE_SCHEDULER=1` so the seed state survives, captures four PNGs at 1280x800, then stops the app. Review the PNGs visually and commit them manually. |
+
 ## Environment Variables
 
 Environment variables are configured in `docker-compose.yaml`:
