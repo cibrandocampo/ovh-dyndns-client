@@ -26,7 +26,7 @@ class _IsolatedFernet(unittest.TestCase):
         os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode("utf-8")
 
     def tearDown(self):
-        if self._previous is None:
+        if self._previous is None:  # pragma: no cover — other test classes preset the env
             os.environ.pop("ENCRYPTION_KEY", None)
         else:
             os.environ["ENCRYPTION_KEY"] = self._previous

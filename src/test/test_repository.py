@@ -5,7 +5,12 @@ import unittest
 from cryptography.fernet import Fernet
 
 from infrastructure.crypto import ENCRYPTED_PREFIX, encrypt_password
-from infrastructure.database.database import get_db_session, init_db, migrate_plaintext_passwords
+from infrastructure.database.database import (
+    get_db_session,
+    has_encrypted_hosts,
+    init_db,
+    migrate_plaintext_passwords,
+)
 from infrastructure.database.models import History, Host, Settings, State, User
 from infrastructure.database.repository import SqliteRepository
 
@@ -291,6 +296,24 @@ class TestSqliteRepository(unittest.TestCase):
         second = migrate_plaintext_passwords()
         self.assertEqual(first, 1)  # only the plaintext row migrated
         self.assertEqual(second, 0)
+
+    # ── has_encrypted_hosts() (boot-time consistency check) ───────────
+
+    def test_has_encrypted_hosts_empty_db(self):
+        """Fresh database with no host rows returns False."""
+        self.assertFalse(has_encrypted_hosts())
+
+    def test_has_encrypted_hosts_only_plaintext(self):
+        """Legacy plaintext-only rows do not trip the check."""
+        with get_db_session() as db:
+            db.add(Host(hostname="plain.example.com", username="u", password="plaintext"))
+        self.assertFalse(has_encrypted_hosts())
+
+    def test_has_encrypted_hosts_with_encrypted_row(self):
+        """Any row carrying the `enc:v1:` prefix flips the check to True."""
+        with get_db_session() as db:
+            db.add(Host(hostname="enc.example.com", username="u", password=encrypt_password("p")))
+        self.assertTrue(has_encrypted_hosts())
 
 
 if __name__ == "__main__":

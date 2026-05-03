@@ -18,8 +18,8 @@ def _reset_rate_limiter():
         from api.main import limiter
 
         limiter.reset()
-    except Exception:
-        # If the app failed to import (early collection) just yield —
-        # the test will fail with a more useful error than a fixture crash.
+    except Exception:  # pragma: no cover — defensive against early collection failures
+        # If the app failed to import just yield; the test will fail with
+        # a more useful error than a fixture crash.
         pass
     yield
