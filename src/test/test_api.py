@@ -250,6 +250,16 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "healthy")
 
+    def test_version_endpoint_is_public_and_returns_string(self):
+        """`/api/version` is unauthenticated and returns the build-injected version."""
+        response = self.client.get("/api/version")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertIn("version", body)
+        self.assertIsInstance(body["version"], str)
+        # In tests APP_VERSION is unset, so the module default applies.
+        self.assertEqual(body["version"], "dev")
+
 
 if __name__ == "__main__":
     unittest.main()

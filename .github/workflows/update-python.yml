@@ -54,6 +54,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
+
+      - name: Compute app version
+        id: version
+        run: echo "value=$(git describe --tags --always --abbrev=5)" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -80,7 +85,9 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.value }}
+
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v5
         with:
@@ -88,7 +95,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: cibrandocampo/ovh-dyndns-client
           readme-filepath: ./README.md
-      
+
       - name: Notify success
         run: |
           echo "Docker image updated with latest Python version (from main)"
@@ -120,7 +127,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.get_tag.outputs.tag }}
-      
+          fetch-depth: 0
+
+      - name: Compute app version
+        if: steps.get_tag.outputs.skip != 'true'
+        id: version
+        run: echo "value=$(git describe --tags --always --abbrev=5)" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         if: steps.get_tag.outputs.skip != 'true'
         uses: docker/setup-buildx-action@v3
@@ -151,7 +164,9 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.value }}
+
       - name: Update Docker Hub description
         if: steps.get_tag.outputs.skip != 'true'
         uses: peter-evans/dockerhub-description@v5

@@ -460,6 +460,19 @@ async function loadSettings() {
     } catch (error) {
         console.error('Failed to load settings:', error);
     }
+
+    // App version is public (no auth) and rendered as small muted text at
+    // the bottom of the settings card. Failures are silent — the placeholder
+    // 'dev' from index.html stays visible.
+    try {
+        const response = await fetch('/api/version');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('app-version').textContent = data.version;
+        }
+    } catch (error) {
+        // ignore — keep the static placeholder
+    }
 }
 
 document.getElementById('settings-form').addEventListener('submit', async (e) => {

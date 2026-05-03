@@ -531,6 +531,15 @@ body {
     text-decoration: underline;
 }
 
+/* ── App version footer (Settings page) ── */
+.app-version {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--c-text-3);
+    margin-top: 1.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .navbar {

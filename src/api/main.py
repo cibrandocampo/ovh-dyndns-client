@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -10,6 +11,8 @@ from slowapi.util import get_remote_address
 from infrastructure.database import SqliteRepository
 
 from .auth import get_admin_credentials, hash_password
+
+APP_VERSION = os.getenv("APP_VERSION", "dev")
 
 # Module-level limiter, defined BEFORE the router import below so that
 # `routers/auth.py` can `from api.main import limiter` while this module
@@ -24,7 +27,9 @@ from .routers import auth_router, history_router, hosts_router, settings_router,
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
-    application = FastAPI(title="OVH DynDNS Client", description="API for managing OVH DynDNS hosts", version="1.0.0")
+    application = FastAPI(
+        title="OVH DynDNS Client", description="API for managing OVH DynDNS hosts", version=APP_VERSION
+    )
 
     # Wire the rate limiter into the app: state.limiter is the convention slowapi
     # looks up from `Request.app.state.limiter`, and the exception handler turns
@@ -56,6 +61,12 @@ def create_app() -> FastAPI:
     async def health_check():
         """Health check endpoint."""
         return {"status": "healthy"}
+
+    @application.get("/api/version")
+    async def app_version():
+        """Public version endpoint. Returns the build-time injected string,
+        or "dev" when the container was built without `--build-arg APP_VERSION`."""
+        return {"version": APP_VERSION}
 
     return application
 
