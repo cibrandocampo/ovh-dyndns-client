@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#1a1a2e"/>
+
+  <!-- Letter D (geometric paths, no font dependency) -->
+  <!-- Left vertical bar (identical geometry to nudge's left N bar) -->
+  <rect x="108" y="112" width="82" height="292" rx="6" fill="#e2e8f0"/>
+  <!-- Bowl: thick stroked arc, same 82px weight as the bar, butt-cap so it
+       merges flush against the spine at x=190 without a rounded transition.
+       Centerline goes from (190,153) to (190,363) via an arc whose rightmost
+       point is (363,258); with stroke-width=82 the visible bowl spans
+       y=[112,404] and reaches x=404 — matching the right edge of nudge's
+       right N bar so the bounding box of the letter is identical. -->
+  <path d="M 190 153 A 173 105 0 0 1 190 363" fill="none" stroke="#e2e8f0" stroke-width="82" stroke-linecap="butt"/>
+
+  <!-- Notification dot: dark halo for visual separation, then yellow dot -->
+  <circle cx="394" cy="106" r="72" fill="#1a1a2e"/>
+  <circle cx="394" cy="106" r="58" fill="#FCD34D"/>
+</svg>

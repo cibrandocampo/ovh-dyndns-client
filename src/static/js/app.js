@@ -219,11 +219,14 @@ async function loadStatus() {
                 <td>${escapeHtml(host.hostname)}</td>
                 <td>${host.last_update ? new Date(host.last_update).toLocaleString() : 'Never'}</td>
                 <td class="${host.last_status === true ? 'status-success' : host.last_status === false ? 'status-error' : 'status-pending'}">
+                    <svg class="icon icon-sm"><use href="/static/icons.svg#${host.last_status === true ? 'i-check-circle' : host.last_status === false ? 'i-x-circle' : 'i-clock'}"/></svg>
                     ${host.last_status === true ? 'Success' : host.last_status === false ? 'Failed' : 'Pending'}
                 </td>
                 <td>${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
                 <td>
-                    <button class="btn btn-small btn-primary" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')">Force Update</button>
+                    <button class="btn btn-small btn-primary" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')" aria-label="Force update">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -233,10 +236,9 @@ async function loadStatus() {
 }
 
 async function forceUpdateHost(hostname) {
-    const btn = event.target;
-    const originalText = btn.textContent;
+    const btn = event.target.closest('button');
     btn.disabled = true;
-    btn.textContent = 'Updating...';
+    btn.dataset.loading = 'true';
 
     try {
         const response = await API.post(`/api/status/trigger/${encodeURIComponent(hostname)}`, {});
@@ -253,14 +255,14 @@ async function forceUpdateHost(hostname) {
         showStatusMessage('Failed to update host', 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = originalText;
+        btn.dataset.loading = 'false';
     }
 }
 
 document.getElementById('trigger-update').addEventListener('click', async () => {
     const btn = document.getElementById('trigger-update');
     btn.disabled = true;
-    btn.textContent = 'Updating...';
+    btn.dataset.loading = 'true';
 
     try {
         const response = await API.post('/api/status/trigger', {});
@@ -277,7 +279,7 @@ document.getElementById('trigger-update').addEventListener('click', async () => 
         showStatusMessage('Failed to trigger update', 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Trigger Update Now';
+        btn.dataset.loading = 'false';
     }
 });
 
@@ -295,8 +297,12 @@ async function loadHosts() {
                 <td>${escapeHtml(host.username)}</td>
                 <td>${host.created_at ? new Date(host.created_at).toLocaleString() : '-'}</td>
                 <td>
-                    <button class="btn btn-small" onclick="editHost(${host.id})">Edit</button>
-                    <button class="btn btn-small btn-danger" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')">Delete</button>
+                    <button class="btn btn-small" onclick="editHost(${host.id})" aria-label="Edit host">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
+                    </button>
+                    <button class="btn btn-small btn-danger" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')" aria-label="Delete host">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-trash-2"/></svg>
+                    </button>
                 </td>
             </tr>
         `).join('');

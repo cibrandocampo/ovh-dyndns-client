@@ -1,17 +1,47 @@
 :root {
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
-    --danger-color: #dc2626;
-    --danger-hover: #b91c1c;
-    --success-color: #16a34a;
-    --warning-color: #d97706;
-    --bg-color: #f8fafc;
-    --card-bg: #ffffff;
-    --text-color: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    /* Brand */
+    --c-brand: #fcd34d;
+    --c-brand-text: #78350f;
+
+    /* Neutral / primary slate */
+    --c-primary: #454961;
+    --c-primary-hover: #5a5f7d;
+    --c-bg: #fafafa;
+    --c-surface: #ffffff;
+    --c-ink: #0a0a0a;
+    --c-text: #454961;
+    --c-text-2: #6c7188;
+    --c-text-3: #a1a1aa;
+    --c-muted: #d4d4d8;
+    --c-border: #e4e4e7;
+    --c-border-inner: #f4f4f5;
+    --c-ring: rgba(69, 73, 97, 0.18);
+
+    /* Status */
+    --c-success: #22c55e;
+    --c-warning: #ca8a04;
+    --c-danger: #ef4444;
+
+    /* Accent (indigo) — external links to OVH */
+    --c-shared: #4a56a1;
+    --c-shared-light: #c5c9e3;
+
+    /* Delete */
+    --c-delete: #fca5a5;
+    --c-delete-hover: #f87171;
+
+    /* Shape */
+    --radius-sm: 4px;
+    --radius: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 10px;
+    --radius-xxl: 12px;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --shadow-focus: 0 0 0 2px var(--c-ring);
+    --transition: 150ms ease;
 }
 
 * {
@@ -21,10 +51,11 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--c-bg);
+    color: var(--c-text);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
 .hidden {
@@ -36,21 +67,25 @@ body {
     max-width: 400px;
     margin: 100px auto;
     padding: 2rem;
-    background: var(--card-bg);
-    border-radius: 8px;
+    background: var(--c-surface);
+    border-radius: var(--radius-xxl);
     box-shadow: var(--shadow-lg);
 }
 
 .login-container h1 {
     text-align: center;
     margin-bottom: 1.5rem;
-    color: var(--primary-color);
+    color: var(--c-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 .info-text {
     text-align: center;
     margin-bottom: 1rem;
-    color: var(--warning-color);
+    color: var(--c-warning);
+    font-size: 0.8rem;
 }
 
 /* Forms */
@@ -62,57 +97,68 @@ body {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
+    font-size: 0.75rem;
+    color: var(--c-text);
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    background: var(--c-surface);
+    color: var(--c-text);
+    transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    border-color: var(--c-text-3);
+    box-shadow: var(--shadow-focus);
 }
 
 .form-group small {
     display: block;
     margin-top: 0.25rem;
-    color: var(--text-muted);
-    font-size: 0.875rem;
+    color: var(--c-text-3);
+    font-size: 0.8rem;
 }
 
 /* Buttons */
 .btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all var(--transition);
+    line-height: 1.25;
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--c-primary);
+    color: var(--c-surface);
+    border-color: var(--c-primary);
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--c-primary-hover);
+    border-color: var(--c-primary-hover);
 }
 
 .btn-danger {
-    background-color: var(--danger-color);
-    color: white;
+    background-color: var(--c-danger);
+    color: var(--c-surface);
+    border-color: var(--c-danger);
 }
 
 .btn-danger:hover {
-    background-color: var(--danger-hover);
+    background-color: var(--c-delete-hover);
+    border-color: var(--c-delete-hover);
 }
 
 .btn:disabled {
@@ -122,56 +168,62 @@ body {
 
 /* Messages */
 .error-message {
-    color: var(--danger-color);
+    color: var(--c-danger);
     margin-top: 1rem;
     text-align: center;
+    font-size: 0.8rem;
 }
 
 .success-message {
-    color: var(--success-color);
+    color: var(--c-success);
     margin-top: 1rem;
     text-align: center;
+    font-size: 0.8rem;
 }
 
 .message {
-    padding: 1rem;
-    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
     margin-bottom: 1rem;
     text-align: center;
+    font-size: 0.875rem;
 }
 
 .message.success {
-    background-color: #dcfce7;
-    color: var(--success-color);
-    border: 1px solid var(--success-color);
+    background-color: rgba(34, 197, 94, 0.08);
+    color: var(--c-success);
+    border: 1px solid var(--c-success);
 }
 
 .message.error {
-    background-color: #fee2e2;
-    color: var(--danger-color);
-    border: 1px solid var(--danger-color);
+    background-color: rgba(239, 68, 68, 0.08);
+    color: var(--c-danger);
+    border: 1px solid var(--c-danger);
 }
 
 .message.info {
-    background-color: #dbeafe;
-    color: var(--primary-color);
-    border: 1px solid var(--primary-color);
+    background-color: rgba(74, 86, 161, 0.08);
+    color: var(--c-shared);
+    border: 1px solid var(--c-shared);
 }
 
 /* Navbar */
 .navbar {
-    background: var(--card-bg);
+    background: var(--c-surface);
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
 }
 
 .nav-brand {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--c-primary);
+    letter-spacing: -0.01em;
 }
 
 .nav-links {
@@ -181,19 +233,24 @@ body {
 
 .nav-link {
     text-decoration: none;
-    color: var(--text-color);
+    color: var(--c-text);
     padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .nav-link:hover {
-    background-color: var(--bg-color);
+    background-color: var(--c-border-inner);
 }
 
 .nav-link.active {
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--c-primary);
+    color: var(--c-surface);
 }
 
 /* Main Content */
@@ -206,7 +263,20 @@ body {
 .section h2 {
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--c-border);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--c-text);
+    letter-spacing: -0.02em;
+}
+
+.section h3 {
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--c-ink);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 /* Status Cards */
@@ -218,49 +288,59 @@ body {
 }
 
 .card {
-    background: var(--card-bg);
+    background: var(--c-surface);
     padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 
 .card h3 {
-    color: var(--text-muted);
-    font-size: 0.875rem;
+    color: var(--c-text-2);
+    font-size: 0.7rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     margin-bottom: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .big-text {
     font-size: 1.5rem;
     font-weight: 600;
+    color: var(--c-ink);
+    font-variant-numeric: tabular-nums;
 }
 
 /* Tables */
 .table {
     width: 100%;
-    background: var(--card-bg);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     border-collapse: collapse;
     overflow: hidden;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
 }
 
 .table th,
 .table td {
-    padding: 1rem;
+    padding: 0.875rem 1rem;
     text-align: left;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--c-border-inner);
 }
 
 .table th {
-    background: var(--bg-color);
+    background: var(--c-bg);
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--c-ink);
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
 }
 
 .table tr:last-child td {
@@ -268,20 +348,23 @@ body {
 }
 
 .table tr:hover td {
-    background-color: var(--bg-color);
+    background-color: var(--c-border-inner);
 }
 
 /* Status Indicators */
 .status-success {
-    color: var(--success-color);
+    color: var(--c-success);
+    font-weight: 500;
 }
 
 .status-error {
-    color: var(--danger-color);
+    color: var(--c-danger);
+    font-weight: 500;
 }
 
 .status-pending {
-    color: var(--warning-color);
+    color: var(--c-warning);
+    font-weight: 500;
 }
 
 /* Actions */
@@ -290,20 +373,28 @@ body {
 }
 
 .btn-small {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
+    padding: 0.3rem 0.625rem;
+    font-size: 0.75rem;
 }
 
 .btn-icon {
-    background: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
     border: none;
+    border-radius: var(--radius);
+    background: var(--c-border-inner);
+    color: var(--c-text-3);
     cursor: pointer;
-    padding: 0.25rem;
-    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
 }
 
 .btn-icon:hover {
-    color: var(--primary-color);
+    background: var(--c-border);
+    color: var(--c-text-2);
 }
 
 /* Modal */
@@ -313,7 +404,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -321,9 +412,9 @@ body {
 }
 
 .modal-content {
-    background: var(--card-bg);
-    padding: 2rem;
-    border-radius: 8px;
+    background: var(--c-surface);
+    padding: 1.5rem;
+    border-radius: var(--radius-xxl);
     box-shadow: var(--shadow-lg);
     max-width: 500px;
     width: 90%;
@@ -331,22 +422,31 @@ body {
 }
 
 .modal-content h2 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     border: none;
     padding: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--c-text);
 }
 
 .close-modal {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    font-size: 1.5rem;
     cursor: pointer;
-    color: var(--text-muted);
+    color: var(--c-text-3);
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition);
 }
 
 .close-modal:hover {
-    color: var(--text-color);
+    color: var(--c-text);
 }
 
 .modal-actions {
@@ -366,16 +466,69 @@ body {
 }
 
 #page-info {
-    color: var(--text-muted);
+    color: var(--c-text-3);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Settings Form */
 .settings-form {
     max-width: 500px;
-    background: var(--card-bg);
+    background: var(--c-surface);
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── Icon base (consumed by <use href="/static/icons.svg#i-X">) ── */
+.icon {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-sm {
+    width: 14px;
+    height: 14px;
+}
+
+.icon-lg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ── Brand logo in navbar (T003) ── */
+.brand-logo {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+}
+
+/* ── Highlighted card for the current IP (border-left brand yellow) ── */
+.card-ip {
+    border-left: 3px solid var(--c-brand);
+}
+
+/* ── External link (indigo accent — reserved for OVH panel/docs links) ── */
+.link-external {
+    color: var(--c-shared);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.link-external:hover {
+    text-decoration: underline;
 }
 
 /* Responsive */
