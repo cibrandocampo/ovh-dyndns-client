@@ -16,6 +16,17 @@
 
 ---
 
+> [!NOTE]
+> **Upgrading from v4.3.0 or earlier?** First boot of the new image
+> auto-generates persisted secrets under `./data` and encrypts your OVH
+> host passwords at rest. Zero-touch — `docker compose pull && up -d`
+> is enough. Heads-up on the new behaviours (server-side forced password
+> change, rate limiting on `/api/auth/*`, critical `data/` directory):
+>
+> → **[Upgrade guide](docs/CONFIGURATION.md#migrating-from-a-previous-release)**
+
+---
+
 ## A closer look — How it works?
 
 ### Hosts — one entry per domain record
