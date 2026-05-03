@@ -12,6 +12,12 @@
 
 *Your IP changes. Your domains shouldn't.* Point your OVH domains to a dynamic IP and forget about it — one container, no external dependencies, your server, your rules.
 
+<p align="center">
+  <a href="https://cibrandocampo.github.io/ovh-dyndns-client/"><strong>See the project site →</strong></a>
+  <br/>
+  <sub>Product tour, features, screenshots and self-host walkthrough</sub>
+</p>
+
 ![Dashboard Status](https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-status.png)
 
 ---

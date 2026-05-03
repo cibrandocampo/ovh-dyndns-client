@@ -1,0 +1,36 @@
+---
+const steps = [
+  {
+    n: '1',
+    title: 'Add a host',
+    body: 'Hostname plus OVH DynHost username and password. Stored encrypted at rest with Fernet — the data volume is the only thing you back up.',
+  },
+  {
+    n: '2',
+    title: 'The agent watches your IP',
+    body: 'Polls a public IP service on a configurable interval, persists state to SQLite, and retries failed hosts on the next cycle.',
+  },
+  {
+    n: '3',
+    title: 'DNS gets updated',
+    body: 'When the IP changes, OVH receives a DynHost update for every host in parallel. Failures surface in the dashboard with the upstream error.',
+  },
+]
+---
+<section id="how-it-works" class="mx-auto max-w-6xl px-6 py-16 sm:py-24 border-t border-slate-800">
+  <div class="text-center mb-12">
+    <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">How it works</h2>
+    <p class="mt-4 text-slate-400 max-w-2xl mx-auto">Three beats from setup to set-and-forget.</p>
+  </div>
+  <ol class="grid gap-8 md:grid-cols-3 list-none p-0">
+    {steps.map((s) => (
+      <li class="rounded-lg border border-slate-800 bg-slate-900/50 p-6">
+        <div class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-brand text-ovh-900 font-semibold text-sm">
+          {s.n}
+        </div>
+        <h3 class="mt-4 text-lg font-semibold">{s.title}</h3>
+        <p class="mt-2 text-sm text-slate-400 leading-relaxed">{s.body}</p>
+      </li>
+    ))}
+  </ol>
+</section>

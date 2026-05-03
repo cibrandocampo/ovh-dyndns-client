@@ -1,0 +1,58 @@
+---
+import Base from '../layouts/Base.astro'
+import Hero from '../components/Hero.astro'
+import HowItWorks from '../components/HowItWorks.astro'
+import FeatureCard from '../components/FeatureCard.astro'
+import SelfHost from '../components/SelfHost.astro'
+import Footer from '../components/Footer.astro'
+
+const features = [
+  {
+    icon: 'globe' as const,
+    title: 'Web UI',
+    body: 'Manage hosts, view status and history from a browser. No CLI required.',
+  },
+  {
+    icon: 'server' as const,
+    title: 'REST API + JWT auth',
+    body: 'Full-featured API protected by JWT bearer tokens. Use it from your own scripts.',
+  },
+  {
+    icon: 'lock' as const,
+    title: 'Encrypted credentials',
+    body: 'OVH host passwords are encrypted at rest with Fernet. The data volume is the only thing you back up.',
+  },
+  {
+    icon: 'shield' as const,
+    title: 'Rate-limited auth',
+    body: '5 logins/min and 10 password-changes/min per IP. Brute-force attempts return 429.',
+  },
+  {
+    icon: 'refresh-cw' as const,
+    title: 'Idempotent migration',
+    body: 'Boot-time auto-migration encrypts legacy plaintext passwords on first start. Zero-touch upgrade from 4.x.',
+  },
+  {
+    icon: 'package' as const,
+    title: 'Docker multi-arch',
+    body: 'Pre-built images for amd64, arm64 and arm/v7. Runs on a Synology, a Pi, or a cheap VPS.',
+  },
+]
+---
+<Base>
+  <Hero />
+  <HowItWorks />
+
+  <section id="features" class="mx-auto max-w-6xl px-6 py-16 sm:py-24 border-t border-slate-800">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Built right, runs anywhere</h2>
+      <p class="mt-4 text-slate-400 max-w-2xl mx-auto">No managed SaaS. No vendor lock-in. Your Docker, your DNS.</p>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => <FeatureCard icon={f.icon} title={f.title} body={f.body} />)}
+    </div>
+  </section>
+
+  <SelfHost />
+  <Footer />
+</Base>
