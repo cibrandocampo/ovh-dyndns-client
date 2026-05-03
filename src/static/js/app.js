@@ -83,6 +83,7 @@ function showSection(sectionId) {
             loadHosts();
             break;
         case 'history':
+            loadHistoryHostnames();
             loadHistory();
             break;
         case 'settings':
@@ -224,7 +225,7 @@ async function loadStatus() {
                 </td>
                 <td>${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
                 <td>
-                    <button class="btn btn-small btn-primary" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')" aria-label="Force update">
+                    <button class="btn-icon btn-icon-done" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')" aria-label="Force update">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
                     </button>
                 </td>
@@ -297,12 +298,14 @@ async function loadHosts() {
                 <td>${escapeHtml(host.username)}</td>
                 <td>${host.created_at ? new Date(host.created_at).toLocaleString() : '-'}</td>
                 <td>
-                    <button class="btn btn-small" onclick="editHost(${host.id})" aria-label="Edit host">
-                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
-                    </button>
-                    <button class="btn btn-small btn-danger" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')" aria-label="Delete host">
-                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-trash-2"/></svg>
-                    </button>
+                    <span class="row-actions">
+                        <button class="btn-icon" onclick="editHost(${host.id})" aria-label="Edit host">
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
+                        </button>
+                        <button class="btn-icon btn-icon-delete" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')" aria-label="Delete host">
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-trash-2"/></svg>
+                        </button>
+                    </span>
                 </td>
             </tr>
         `).join('');
@@ -413,13 +416,41 @@ document.querySelectorAll('.close-modal').forEach(el => {
 
 // History
 let historyPage = 0;
+let historyHostnameFilter = '';
 const historyLimit = 20;
+
+async function loadHistoryHostnames() {
+    try {
+        const response = await API.get('/api/history/hostnames');
+        if (!response.ok) return;
+        const list = await response.json();
+        const select = document.getElementById('history-filter-hostname');
+        const previous = historyHostnameFilter;
+        // Keep "All hosts" first, then one option per hostname (alpha-sorted by backend).
+        select.innerHTML = '<option value="">All hosts</option>' +
+            list.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+        // Restore the user's choice if it still exists; otherwise reset to "All hosts".
+        if (previous && list.includes(previous)) {
+            select.value = previous;
+        } else {
+            select.value = '';
+            historyHostnameFilter = '';
+        }
+    } catch (error) {
+        console.error('Failed to load history hostnames:', error);
+    }
+}
 
 async function loadHistory(page = 0) {
     historyPage = page;
 
     try {
-        const response = await API.get(`/api/history/?limit=${historyLimit}&offset=${page * historyLimit}`);
+        const params = new URLSearchParams({
+            limit: String(historyLimit),
+            offset: String(page * historyLimit),
+        });
+        if (historyHostnameFilter) params.set('hostname', historyHostnameFilter);
+        const response = await API.get(`/api/history/?${params.toString()}`);
         const data = await response.json();
 
         const tbody = document.querySelector('#history-table tbody');
@@ -447,6 +478,11 @@ document.getElementById('prev-page').addEventListener('click', () => {
 
 document.getElementById('next-page').addEventListener('click', () => {
     loadHistory(historyPage + 1);
+});
+
+document.getElementById('history-filter-hostname').addEventListener('change', (e) => {
+    historyHostnameFilter = e.target.value;
+    loadHistory(0);
 });
 
 // Settings

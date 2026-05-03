@@ -367,8 +367,11 @@ body {
     font-weight: 500;
 }
 
-/* Actions */
+/* Actions — top-of-section primary buttons (Trigger Update, Add Host).
+ * Right-aligned to match the Save Settings pattern. */
 .actions {
+    display: flex;
+    justify-content: flex-end;
     margin-bottom: 1.5rem;
 }
 
@@ -395,6 +398,36 @@ body {
 .btn-icon:hover {
     background: var(--c-border);
     color: var(--c-text-2);
+}
+
+/* Primary in-row action (e.g. Force Update). Slate background, white icon —
+ * matches nudge's `.btnIconDone`. */
+.btn-icon-done {
+    color: var(--c-surface);
+    background: var(--c-primary);
+}
+
+.btn-icon-done:hover {
+    background: var(--c-primary-hover);
+}
+
+/* Destructive in-row action (e.g. Delete). Subtle red tint, never solid;
+ * the modal confirmation button is the one carrying the strong colour. */
+.btn-icon-delete {
+    color: var(--c-delete);
+    background: rgba(239, 68, 68, 0.04);
+}
+
+.btn-icon-delete:hover {
+    color: var(--c-delete-hover);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Tight cluster of icon buttons inside a table cell. */
+.row-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 /* Modal */
@@ -473,12 +506,34 @@ body {
 
 /* Settings Form */
 .settings-form {
-    max-width: 500px;
     background: var(--c-surface);
     padding: 2rem;
     border: 1px solid var(--c-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+}
+
+/* Two-column grid for the form fields. The submit button lives outside
+ * the grid and stays full-width below. Collapses to one column on mobile. */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 2rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Right-align the submit button inside a form (matches the visual register
+ * of `.modal-actions` but for in-page forms). */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
 }
 
 /* ── Icon base (consumed by <use href="/static/icons.svg#i-X">) ── */
@@ -529,6 +584,49 @@ body {
 
 .link-external:hover {
     text-decoration: underline;
+}
+
+/* ── Filter row (History page) ─────────────────────────────────
+ * Mirrors nudge's HistoryPage `.filterRow` / `.filterField`. Stacks on
+ * narrow viewports thanks to flex-wrap. */
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1 1 12rem;
+    min-width: 12rem;
+    max-width: 24rem;
+}
+
+.filter-label {
+    font-size: 0.7rem;
+    color: var(--c-text-3);
+    font-weight: 500;
+    padding-left: 0.4rem;
+}
+
+.filter-select {
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    background: var(--c-surface);
+    color: var(--c-text);
+    width: 100%;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--c-text-3);
+    box-shadow: var(--shadow-focus);
 }
 
 /* ── App version footer (Settings page) ── */

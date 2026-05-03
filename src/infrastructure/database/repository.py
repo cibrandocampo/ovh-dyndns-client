@@ -224,10 +224,13 @@ class SqliteRepository(IpStateStore, HostsRepository):
 
     # History methods
 
-    def get_history(self, limit: int = 50, offset: int = 0) -> List[dict]:
-        """Get history entries with pagination."""
+    def get_history(self, limit: int = 50, offset: int = 0, hostname: Optional[str] = None) -> List[dict]:
+        """Get history entries with pagination, optionally filtered by hostname."""
         with get_db_session() as db:
-            entries = db.query(History).order_by(History.timestamp.desc()).offset(offset).limit(limit).all()
+            query = db.query(History).order_by(History.timestamp.desc())
+            if hostname:
+                query = query.filter(History.hostname == hostname)
+            entries = query.offset(offset).limit(limit).all()
 
             return [
                 {
@@ -241,10 +244,25 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 for entry in entries
             ]
 
-    def get_history_count(self) -> int:
-        """Get total count of history entries."""
+    def get_history_count(self, hostname: Optional[str] = None) -> int:
+        """Total count of history entries, optionally filtered by hostname."""
         with get_db_session() as db:
-            return db.query(History).count()
+            query = db.query(History)
+            if hostname:
+                query = query.filter(History.hostname == hostname)
+            return query.count()
+
+    def get_history_hostnames(self) -> List[str]:
+        """Distinct, alpha-sorted hostnames that appear in history (skips NULLs)."""
+        with get_db_session() as db:
+            rows = (
+                db.query(History.hostname)
+                .filter(History.hostname.isnot(None))
+                .distinct()
+                .order_by(History.hostname)
+                .all()
+            )
+            return [row[0] for row in rows]
 
     # User methods
 

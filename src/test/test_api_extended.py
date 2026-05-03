@@ -208,6 +208,55 @@ class TestAPIExtended(unittest.TestCase):
         response = self.client.get("/api/history/?limit=-1", headers=headers)
         self.assertEqual(response.status_code, 422)
 
+    def test_history_filter_by_hostname(self):
+        """`?hostname=foo` returns only entries that match, with the count adjusted."""
+        from infrastructure.database import SqliteRepository
+
+        repo = SqliteRepository()
+        repo.create_host("alpha.example.com", "u", "p")
+        repo.update_host_status("alpha.example.com", True)
+        repo.create_host("beta.example.com", "u", "p")
+        repo.update_host_status("beta.example.com", False, "boom")
+
+        headers = self.get_auth_header()
+        response = self.client.get("/api/history/?hostname=alpha.example.com", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        # Every returned row references the requested hostname.
+        for entry in body["entries"]:
+            self.assertEqual(entry["hostname"], "alpha.example.com")
+        # `total` reflects the filtered count, not the global one.
+        self.assertEqual(body["total"], len(body["entries"]))
+
+    def test_history_hostnames_endpoint_returns_distinct_sorted(self):
+        """`/api/history/hostnames` returns distinct hostnames in alpha order, NULLs excluded."""
+        from infrastructure.database import SqliteRepository
+
+        repo = SqliteRepository()
+        # Two different hosts to exercise distinct ordering. `init_default_settings`
+        # also writes a history row but with `hostname=None`, which must be filtered out.
+        repo.create_host("zeta.example.com", "u", "p")
+        repo.create_host("alpha.example.com", "u", "p")
+        repo.init_default_settings()
+
+        headers = self.get_auth_header()
+        response = self.client.get("/api/history/hostnames", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        names = response.json()
+        self.assertIn("alpha.example.com", names)
+        self.assertIn("zeta.example.com", names)
+        # Sorted alpha — alpha < zeta in the response order.
+        self.assertLess(names.index("alpha.example.com"), names.index("zeta.example.com"))
+        # No NULLs surfaced as `null`/empty strings.
+        self.assertNotIn(None, names)
+        self.assertNotIn("", names)
+
+    def test_history_hostnames_requires_auth(self):
+        """The hostnames endpoint must reject unauthenticated requests."""
+        response = self.client.get("/api/history/hostnames")
+        # Same 401/403 tolerance as the existing `test_unauthorized_access`.
+        self.assertIn(response.status_code, [401, 403])
+
     # Settings edge cases
 
     def test_settings_update_partial(self):
