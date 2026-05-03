@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OVH DynDNS Client</title>
+    <link rel="icon" href="/static/icons/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/static/icons/source.svg" />
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon-180x180.png" />
+    <link rel="manifest" href="/static/icons/manifest.json" />
+    <meta name="theme-color" content="#454961" />
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -31,7 +36,10 @@
         <div id="change-password-page" class="page hidden">
             <div class="login-container">
                 <h1>Change Password</h1>
-                <p class="info-text">You must change your password before continuing.</p>
+                <p class="info-text">
+                    <svg class="icon icon-sm"><use href="/static/icons.svg#i-alert-triangle"/></svg>
+                    You must change your password before continuing.
+                </p>
                 <form id="change-password-form">
                     <div class="form-group">
                         <label for="current-password">Current Password</label>
@@ -54,13 +62,31 @@
         <!-- Dashboard -->
         <div id="dashboard" class="page hidden">
             <nav class="navbar">
-                <div class="nav-brand">OVH DynDNS Client</div>
+                <div class="nav-brand">
+                    <img src="/static/icons/source.svg" alt="" class="brand-logo" />
+                    OVH DynDNS Client
+                </div>
                 <div class="nav-links">
-                    <a href="#" data-section="status" class="nav-link active">Status</a>
-                    <a href="#" data-section="hosts" class="nav-link">Hosts</a>
-                    <a href="#" data-section="history" class="nav-link">History</a>
-                    <a href="#" data-section="settings" class="nav-link">Settings</a>
-                    <a href="#" id="logout-link" class="nav-link">Logout</a>
+                    <a href="#" data-section="status" class="nav-link active">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-activity"/></svg>
+                        Status
+                    </a>
+                    <a href="#" data-section="hosts" class="nav-link">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-server"/></svg>
+                        Hosts
+                    </a>
+                    <a href="#" data-section="history" class="nav-link">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-clock"/></svg>
+                        History
+                    </a>
+                    <a href="#" data-section="settings" class="nav-link">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-settings"/></svg>
+                        Settings
+                    </a>
+                    <a href="#" id="logout-link" class="nav-link">
+                        <svg class="icon icon-sm"><use href="/static/icons.svg#i-log-out"/></svg>
+                        Logout
+                    </a>
                 </div>
             </nav>
 
@@ -69,8 +95,11 @@
                 <section id="status-section" class="section">
                     <h2>Status</h2>
                     <div class="status-cards">
-                        <div class="card">
-                            <h3>Current IP</h3>
+                        <div class="card card-ip">
+                            <h3>
+                                <svg class="icon icon-sm"><use href="/static/icons.svg#i-globe"/></svg>
+                                Current IP
+                            </h3>
                             <p id="current-ip" class="big-text">-</p>
                         </div>
                         <div class="card">
@@ -83,7 +112,10 @@
                         </div>
                     </div>
                     <div class="actions">
-                        <button id="trigger-update" class="btn btn-primary">Trigger Update Now</button>
+                        <button id="trigger-update" class="btn btn-primary">
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
+                            Trigger Update Now
+                        </button>
                     </div>
                     <div id="status-message" class="message hidden"></div>
                     <h3>Host Status</h3>
@@ -105,7 +137,10 @@
                 <section id="hosts-section" class="section hidden">
                     <h2>Hosts</h2>
                     <div class="actions">
-                        <button id="add-host-btn" class="btn btn-primary">Add Host</button>
+                        <button id="add-host-btn" class="btn btn-primary">
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-plus"/></svg>
+                            Add Host
+                        </button>
                     </div>
                     <table class="table" id="hosts-table">
                         <thead>
@@ -124,6 +159,14 @@
                 <!-- History Section -->
                 <section id="history-section" class="section hidden">
                     <h2>History</h2>
+                    <div class="filter-row">
+                        <div class="filter-field">
+                            <label for="history-filter-hostname" class="filter-label">Hostname</label>
+                            <select id="history-filter-hostname" class="filter-select">
+                                <option value="">All hosts</option>
+                            </select>
+                        </div>
+                    </div>
                     <table class="table" id="history-table">
                         <thead>
                             <tr>
@@ -137,9 +180,15 @@
                         <tbody></tbody>
                     </table>
                     <div class="pagination">
-                        <button id="prev-page" class="btn" disabled>Previous</button>
+                        <button id="prev-page" class="btn" disabled>
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-chevron-left"/></svg>
+                            Previous
+                        </button>
                         <span id="page-info">Page 1</span>
-                        <button id="next-page" class="btn">Next</button>
+                        <button id="next-page" class="btn">
+                            Next
+                            <svg class="icon icon-sm"><use href="/static/icons.svg#i-chevron-right"/></svg>
+                        </button>
                     </div>
                 </section>
 
@@ -147,24 +196,29 @@
                 <section id="settings-section" class="section hidden">
                     <h2>Settings</h2>
                     <form id="settings-form" class="settings-form">
-                        <div class="form-group">
-                            <label for="update-interval">Update Interval (seconds)</label>
-                            <input type="number" id="update-interval" name="update_interval" min="60" max="86400" required>
-                            <small>How often to check for IP changes (60-86400 seconds)</small>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label for="update-interval">Update Interval (seconds)</label>
+                                <input type="number" id="update-interval" name="update_interval" min="60" max="86400" required>
+                                <small>How often to check for IP changes (60-86400 seconds)</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="logger-level">Log Level</label>
+                                <select id="logger-level" name="logger_level">
+                                    <option value="DEBUG">DEBUG</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                    <option value="CRITICAL">CRITICAL</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="logger-level">Log Level</label>
-                            <select id="logger-level" name="logger_level">
-                                <option value="DEBUG">DEBUG</option>
-                                <option value="INFO">INFO</option>
-                                <option value="WARNING">WARNING</option>
-                                <option value="ERROR">ERROR</option>
-                                <option value="CRITICAL">CRITICAL</option>
-                            </select>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
                         </div>
-                        <button type="submit" class="btn btn-primary">Save Settings</button>
                         <div id="settings-message" class="success-message"></div>
                     </form>
+                    <p id="app-version" class="app-version">dev</p>
                 </section>
             </main>
         </div>
@@ -172,7 +226,9 @@
         <!-- Host Modal -->
         <div id="host-modal" class="modal hidden">
             <div class="modal-content">
-                <span class="close-modal">&times;</span>
+                <span class="close-modal" aria-label="Close">
+                    <svg class="icon"><use href="/static/icons.svg#i-x"/></svg>
+                </span>
                 <h2 id="modal-title">Add Host</h2>
                 <form id="host-form">
                     <input type="hidden" id="host-id">

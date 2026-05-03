@@ -63,7 +63,7 @@ test.describe('Hosts', () => {
     const rowsBefore = await page.locator('#hosts-table tbody tr').count()
 
     // Click delete on the last row
-    await page.locator('#hosts-table tbody tr').last().locator('.btn-danger').click()
+    await page.locator('#hosts-table tbody tr').last().locator('[aria-label="Delete host"]').click()
     await expect(page.locator('#delete-modal')).toBeVisible()
     await expect(page.locator('#delete-hostname')).toHaveText(hostname)
 
@@ -83,7 +83,7 @@ test.describe('Hosts', () => {
     await expect(page.locator('#host-modal')).not.toBeVisible()
 
     const rowsBefore = await page.locator('#hosts-table tbody tr').count()
-    await page.locator('#hosts-table tbody tr').last().locator('.btn-danger').click()
+    await page.locator('#hosts-table tbody tr').last().locator('[aria-label="Delete host"]').click()
     await expect(page.locator('#delete-modal')).toBeVisible()
     await page.locator('#cancel-delete').click()
     await expect(page.locator('#delete-modal')).not.toBeVisible()

@@ -11,3 +11,11 @@ select = ["E", "F", "W", "I"]
 [tool.pytest.ini_options]
 testpaths = ["test"]
 pythonpath = ["."]
+
+[tool.coverage.report]
+# Lines that pytest never executes by design — exclude from coverage so
+# the report focuses on real uncovered logic rather than test boilerplate.
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
