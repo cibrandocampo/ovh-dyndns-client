@@ -50,3 +50,23 @@ T011 ─────────────────┘
 ```
 
 Tres ramas paralelizables: auth-foundation (T006→T007→T008), auth-flow (T009→T010) y network resilience (T011). T012 cierra documentando los cambios visibles al operador.
+
+---
+
+## Series T013–T015 — Seed and screenshots pipeline
+
+Plan: [docs/plans/seed-and-screenshots-pipeline.md](../plans/seed-and-screenshots-pipeline.md)
+
+| ID | Title | Dependencies | Status | QA |
+|----|-------|-------------|--------|----|
+| T013 | Seed `scripts/seed.py` + dev compose mount + tests | — | Completed | — |
+| T014 | Playwright screenshot capture (`e2e/screenshots.mjs`) | T013 | Completed | — |
+| T015 | Orchestration: `Makefile` + `wait-for-health.sh` + regenerated PNGs | T013, T014 | Completed | — |
+
+### Execution order
+
+```
+T013 ──→ T014 ──→ T015
+```
+
+Cadena lineal: la pipeline es producer → consumer → orchestrator.
