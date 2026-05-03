@@ -1,0 +1,38 @@
+---
+import '../styles/global.css'
+
+export interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'OVH DynDNS Client — Self-hosted DynDNS for OVH domains',
+  description = 'Point your OVH domains to a dynamic IP and forget about it. One Docker container, encrypted credentials, no external dependencies.',
+} = Astro.props
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://cibrandocampo.github.io').toString()
+---
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={`${import.meta.env.BASE_URL}/favicon.ico`} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={`${import.meta.env.BASE_URL}/icons/pwa-512x512.png`} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-ovh-950 via-slate-950 to-ovh-900 text-slate-100 antialiased">
+    <slot />
+  </body>
+</html>
