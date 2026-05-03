@@ -51,6 +51,75 @@ the runtime refuses to boot and logs a clear remediation message. Restore
 the missing key file or set the `ENCRYPTION_KEY` env var to the previous
 value to recover.
 
+## Migrating from a previous release
+
+Upgrading from a release that stored OVH host passwords as plaintext is
+**zero-touch**: pull the new image and restart. The runtime takes care
+of generating the missing secrets and re-encrypting existing data on
+first boot.
+
+What happens, in order:
+
+1. `init_db()` — idempotent; existing tables and rows survive.
+2. `JWT_SECRET` resolution. If the env var is set, the same value is
+   reused (active tokens stay valid). Otherwise, a 32-byte random
+   string is generated and persisted at `data/.jwt_secret`; existing
+   tokens become invalid and users will need to log in again.
+3. Consistency check. If the database has rows with the `enc:v1:`
+   prefix but no key is available, the container refuses to boot
+   (see "Persisted secrets and `data/` directory" above). On a
+   fresh upgrade there are no such rows, so this is a no-op.
+4. `ENCRYPTION_KEY` resolution. Same precedence as `JWT_SECRET`: env
+   var, then persisted file, then auto-generation into
+   `data/.encryption_key` (mode `0600`).
+5. **Boot-time password migration**. Every host whose `password` does
+   not start with `enc:v1:` is encrypted in place with the key from
+   step 4. The runtime logs a single line:
+
+   ```
+   Encrypted N legacy plaintext host password(s)
+   ```
+
+   On every subsequent boot the migration is a no-op (count `0`) and
+   the line is suppressed.
+6. Admin user check, scheduler thread, FastAPI server — unchanged.
+
+After the first restart:
+
+- No legible OVH password remains in `data/dyndns.db`.
+- `data/.jwt_secret` and `data/.encryption_key` both exist (mode `0600`).
+- Login flow now enforces `must_change_password`: an admin who never
+  rotated the default `admin/admin` will get `403 Password change
+  required` from every endpoint other than `/api/auth/change-password`
+  until the password is changed.
+- `/api/auth/login` is rate-limited (5/min/IP); `/api/auth/change-password`
+  is rate-limited (10/min/IP).
+
+### Operator action items
+
+- **Back up `data/` immediately** after the upgrade and on a regular
+  schedule. Losing `.encryption_key` while encrypted hosts exist makes
+  those credentials unrecoverable.
+- If the previous deployment used a weak hard-coded `JWT_SECRET` in
+  `docker-compose.yaml`, this is a good moment to remove it and let
+  the runtime auto-generate a strong one under `data/`.
+- Behind a reverse proxy, rate-limit accuracy depends on
+  `X-Forwarded-For` propagation. See "Rate limiting" below.
+
+### Edge case: env-var key without a persisted file
+
+If you start with `ENCRYPTION_KEY` set as an env var, the runtime uses
+it and never writes `data/.encryption_key`. If you later remove the env
+var without writing the file by hand, the next boot will detect
+encrypted hosts but no key and fail-fast. Two safe options:
+
+- Keep the env var permanently set, **or**
+- Persist the same value to disk before removing the env var:
+
+  ```bash
+  echo -n "$ENCRYPTION_KEY" > data/.encryption_key && chmod 600 data/.encryption_key
+  ```
+
 ## Example `.env` File
 
 ```ini
