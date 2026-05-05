@@ -1,6 +1,6 @@
 # REST API Documentation
 
-All API endpoints require JWT authentication except `/api/auth/login` and `/health`.
+All API endpoints require JWT authentication except `/api/auth/login`, `/health` and `/api/version`.
 
 ## Authentication
 
@@ -21,6 +21,11 @@ Response:
 }
 ```
 
+**Note**: when `must_change_password` is `true` in the response, every
+endpoint other than `POST /api/auth/change-password` will return
+`403 Password change required` until the password is rotated. This
+applies to the default `admin/admin` account on first deployment.
+
 ### Using the Token
 
 Include the token in the `Authorization` header:
@@ -39,6 +44,17 @@ curl -X POST http://localhost:8000/api/auth/change-password \
   -d '{"current_password": "old-pass", "new_password": "new-pass"}'
 ```
 
+### Rate limiting
+
+Authentication endpoints are rate-limited per client IP:
+
+- `POST /api/auth/login` — 5 requests per minute
+- `POST /api/auth/change-password` — 10 requests per minute
+
+Exceeding the limit returns `429 Too Many Requests`. See
+[Rate limiting](CONFIGURATION.md#rate-limiting) for the full reference,
+including reverse proxy considerations.
+
 ## Endpoints
 
 | Method | Endpoint | Description |
@@ -56,6 +72,7 @@ curl -X POST http://localhost:8000/api/auth/change-password \
 | GET | `/api/settings/` | Get settings |
 | PUT | `/api/settings/` | Update settings |
 | GET | `/health` | Health check (no auth required) |
+| GET | `/api/version` | Application version (no auth required) |
 
 ## Hosts
 

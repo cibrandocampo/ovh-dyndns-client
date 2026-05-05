@@ -85,14 +85,18 @@ services:
   ovh-dyndns-client:
     image: cibrandocampo/ovh-dyndns-client:stable
     container_name: ovh-dyndns-client
-    restart: always
-    # JWT_SECRET and ENCRYPTION_KEY are auto-generated under ./data on first
-    # start. Override only if you need fixed values across deployments — see
-    # docs/CONFIGURATION.md.
+    init: true
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
       - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 ```
 
 2. **Run:**
