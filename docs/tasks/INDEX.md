@@ -91,3 +91,25 @@ T016 ──→ T017 ──→ T018 ──→ T019
 ```
 
 Cadena lineal: scaffold → componentes → build pipeline → deploy. Cada paso depende del anterior porque añade un layer concreto (estructura, contenido, assets, CI).
+
+---
+
+## Series T020–T022 — Docs alignment v5 (env.example, quick-start, API.md)
+
+Plan: [docs/plans/docs-alignment-v5.md](../plans/docs-alignment-v5.md)
+
+| ID | Title | Dependencies | Status | QA |
+|----|-------|-------------|--------|----|
+| T020 | Sincronizar `env.example` con `docs/CONFIGURATION.md` | — | Completed | — |
+| T021 | Sincronizar snippet `docker-compose.yaml` en README quick-start + `site/src/components/SelfHost.astro` | — | Completed | — |
+| T022 | Añadir rate limits, `GET /api/version` y nota 403 a `docs/API.md` | — | Completed | — |
+
+### Execution order
+
+```
+T020 ──┐
+T021 ──┼──→ (PR único: docs alignment v5)
+T022 ──┘
+```
+
+Las tres tareas son independientes — tocan ficheros distintos sin solapamiento — y pueden ejecutarse en cualquier orden o en paralelo. Se cierran en un solo PR de docs.
