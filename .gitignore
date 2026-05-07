@@ -133,10 +133,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# QA evidence — local outputs/screenshots produced by /dev-3-run.
-# Task files reference paths under this directory; the artefacts themselves
-# are not part of the repo.
-docs/tasks/evidence/
+# Task and plan docs — managed by Claude Code, not part of the repo.
+docs/tasks/
+docs/plans/
 
 # Astro landing site
 site/.astro
