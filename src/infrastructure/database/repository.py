@@ -11,6 +11,22 @@ from .database import get_db_session
 from .models import History, Host, Settings, State, User
 
 
+def _iso_utc(dt: Optional[datetime]) -> Optional[str]:
+    """Return a datetime as an ISO 8601 string with an explicit UTC offset.
+
+    The SQLite ``DateTime`` column type does not preserve tzinfo, so values
+    persisted as aware UTC come back naive. By convention every timestamp in
+    this app is stored in UTC; we re-attach that tzinfo before serialising so
+    the output carries a proper offset (``+00:00``) and clients can render it
+    in the local timezone.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat()
+
+
 class SqliteRepository(IpStateStore, HostsRepository):
     """SQLite-based implementation of IpStateStore and HostsRepository."""
 
@@ -108,10 +124,10 @@ class SqliteRepository(IpStateStore, HostsRepository):
                     "id": host.id,
                     "hostname": host.hostname,
                     "username": host.username,
-                    "last_update": host.last_update.isoformat() if host.last_update else None,
+                    "last_update": _iso_utc(host.last_update),
                     "last_status": host.last_status,
                     "last_error": host.last_error,
-                    "created_at": host.created_at.isoformat() if host.created_at else None,
+                    "created_at": _iso_utc(host.created_at),
                 }
                 for host in hosts
             ]
@@ -126,10 +142,10 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "id": host.id,
                 "hostname": host.hostname,
                 "username": host.username,
-                "last_update": host.last_update.isoformat() if host.last_update else None,
+                "last_update": _iso_utc(host.last_update),
                 "last_status": host.last_status,
                 "last_error": host.last_error,
-                "created_at": host.created_at.isoformat() if host.created_at else None,
+                "created_at": _iso_utc(host.created_at),
             }
 
     def create_host(self, hostname: str, username: str, password: str) -> dict:
@@ -149,7 +165,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "last_update": None,
                 "last_status": None,
                 "last_error": None,
-                "created_at": host.created_at.isoformat() if host.created_at else None,
+                "created_at": _iso_utc(host.created_at),
             }
 
     def update_host(
@@ -175,10 +191,10 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 "id": host.id,
                 "hostname": host.hostname,
                 "username": host.username,
-                "last_update": host.last_update.isoformat() if host.last_update else None,
+                "last_update": _iso_utc(host.last_update),
                 "last_status": host.last_status,
                 "last_error": host.last_error,
-                "created_at": host.created_at.isoformat() if host.created_at else None,
+                "created_at": _iso_utc(host.created_at),
             }
 
     def delete_host(self, host_id: int) -> bool:
@@ -218,7 +234,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
             if state:
                 return {
                     "current_ip": state.current_ip,
-                    "last_check": state.last_check.isoformat() if state.last_check else None,
+                    "last_check": _iso_utc(state.last_check),
                 }
             return {"current_ip": None, "last_check": None}
 
@@ -236,7 +252,7 @@ class SqliteRepository(IpStateStore, HostsRepository):
                 {
                     "id": entry.id,
                     "ip": entry.ip,
-                    "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
+                    "timestamp": _iso_utc(entry.timestamp),
                     "action": entry.action,
                     "hostname": entry.hostname,
                     "details": entry.details,

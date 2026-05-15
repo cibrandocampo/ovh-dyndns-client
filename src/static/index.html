@@ -63,29 +63,29 @@
         <div id="dashboard" class="page hidden">
             <nav class="navbar">
                 <div class="nav-brand">
-                    <img src="/static/icons/source.svg" alt="" class="brand-logo" />
-                    OVH DynDNS Client
+                    <img src="/static/icons/source.svg" alt="OVH DynDNS Client" class="brand-logo" />
+                    <span class="nav-brand-label">OVH DynDNS Client</span>
                 </div>
                 <div class="nav-links">
-                    <a href="#" data-section="status" class="nav-link active">
+                    <a href="#" data-section="status" class="nav-link active" aria-label="Status">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-activity"/></svg>
-                        Status
+                        <span class="nav-link-label">Status</span>
                     </a>
-                    <a href="#" data-section="hosts" class="nav-link">
+                    <a href="#" data-section="hosts" class="nav-link" aria-label="Hosts">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-server"/></svg>
-                        Hosts
+                        <span class="nav-link-label">Hosts</span>
                     </a>
-                    <a href="#" data-section="history" class="nav-link">
+                    <a href="#" data-section="history" class="nav-link" aria-label="History">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-clock"/></svg>
-                        History
+                        <span class="nav-link-label">History</span>
                     </a>
-                    <a href="#" data-section="settings" class="nav-link">
+                    <a href="#" data-section="settings" class="nav-link" aria-label="Settings">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-settings"/></svg>
-                        Settings
+                        <span class="nav-link-label">Settings</span>
                     </a>
-                    <a href="#" id="logout-link" class="nav-link">
+                    <a href="#" id="logout-link" class="nav-link" aria-label="Logout">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-log-out"/></svg>
-                        Logout
+                        <span class="nav-link-label">Logout</span>
                     </a>
                 </div>
             </nav>
@@ -125,8 +125,8 @@
                                 <th>Hostname</th>
                                 <th>Last Update</th>
                                 <th>Status</th>
-                                <th>Error</th>
-                                <th>Actions</th>
+                                <th class="col-secondary">Error</th>
+                                <th class="col-actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -145,11 +145,11 @@
                     <table class="table" id="hosts-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th class="col-secondary">ID</th>
                                 <th>Hostname</th>
-                                <th>Username</th>
-                                <th>Created At</th>
-                                <th>Actions</th>
+                                <th class="col-secondary">Username</th>
+                                <th class="col-secondary">Created At</th>
+                                <th class="col-actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -173,8 +173,8 @@
                                 <th>Timestamp</th>
                                 <th>Action</th>
                                 <th>Hostname</th>
-                                <th>IP</th>
-                                <th>Details</th>
+                                <th class="col-secondary">IP</th>
+                                <th class="col-secondary">Details</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -248,6 +248,17 @@
                     <button type="submit" class="btn btn-primary">Save</button>
                     <div id="host-error" class="error-message"></div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Generic row-details modal (used by all tables on small screens) -->
+        <div id="details-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-modal" aria-label="Close">
+                    <svg class="icon"><use href="/static/icons.svg#i-x"/></svg>
+                </span>
+                <h2 id="details-modal-title">Details</h2>
+                <dl id="details-modal-body" class="details-list"></dl>
             </div>
         </div>
 

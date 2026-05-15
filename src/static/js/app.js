@@ -215,22 +215,27 @@ async function loadStatus() {
             : '-';
 
         const tbody = document.querySelector('#host-status-table tbody');
-        tbody.innerHTML = data.hosts.map(host => `
-            <tr>
+        statusRows = data.hosts;
+        tbody.innerHTML = statusRows.map((host, i) => {
+            const klass = host.last_status === true ? 'status-success' : host.last_status === false ? 'status-error' : 'status-pending';
+            const icon = host.last_status === true ? 'i-check-circle' : host.last_status === false ? 'i-x-circle' : 'i-clock';
+            const label = host.last_status === true ? 'Success' : host.last_status === false ? 'Failed' : 'Pending';
+            return `
+            <tr class="tr-clickable" data-idx="${i}">
                 <td>${escapeHtml(host.hostname)}</td>
-                <td>${host.last_update ? new Date(host.last_update).toLocaleString() : 'Never'}</td>
-                <td class="${host.last_status === true ? 'status-success' : host.last_status === false ? 'status-error' : 'status-pending'}">
-                    <svg class="icon icon-sm"><use href="/static/icons.svg#${host.last_status === true ? 'i-check-circle' : host.last_status === false ? 'i-x-circle' : 'i-clock'}"/></svg>
-                    ${host.last_status === true ? 'Success' : host.last_status === false ? 'Failed' : 'Pending'}
+                <td><time datetime="${host.last_update || ''}" title="${escapeHtml(formatFullTime(host.last_update))}">${escapeHtml(formatRelativeTime(host.last_update))}</time></td>
+                <td class="${klass}">
+                    <svg class="icon icon-sm"><use href="/static/icons.svg#${icon}"/></svg>
+                    <span class="status-label">${label}</span>
                 </td>
-                <td>${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
-                <td>
+                <td class="col-secondary">${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
+                <td class="col-actions">
                     <button class="btn-icon btn-icon-done" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')" aria-label="Force update">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
                     </button>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
     } catch (error) {
         console.error('Failed to load status:', error);
     }
@@ -291,13 +296,14 @@ async function loadHosts() {
         const data = await response.json();
 
         const tbody = document.querySelector('#hosts-table tbody');
-        tbody.innerHTML = data.map(host => `
-            <tr>
-                <td>${host.id}</td>
+        hostsRows = data;
+        tbody.innerHTML = hostsRows.map((host, i) => `
+            <tr class="tr-clickable" data-idx="${i}">
+                <td class="col-secondary">${host.id}</td>
                 <td>${escapeHtml(host.hostname)}</td>
-                <td>${escapeHtml(host.username)}</td>
-                <td>${host.created_at ? new Date(host.created_at).toLocaleString() : '-'}</td>
-                <td>
+                <td class="col-secondary">${escapeHtml(host.username)}</td>
+                <td class="col-secondary"><time datetime="${host.created_at || ''}" title="${escapeHtml(formatFullTime(host.created_at))}">${escapeHtml(host.created_at ? formatFullTime(host.created_at) : '-')}</time></td>
+                <td class="col-actions">
                     <span class="row-actions">
                         <button class="btn-icon" onclick="editHost(${host.id})" aria-label="Edit host">
                             <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
@@ -414,6 +420,70 @@ document.querySelectorAll('.close-modal').forEach(el => {
     });
 });
 
+// Row-click delegation for the shared details modal. Per-table mappers
+// translate the row index into the dl items shown in the modal.
+const rowDetailHandlers = {
+    'host-status-table': {
+        title: 'Host status',
+        items: (h) => [
+            { label: 'Hostname', value: h.hostname },
+            { label: 'Last update', value: formatFullTime(h.last_update) },
+            {
+                label: 'Status',
+                html: true,
+                value: h.last_status === true
+                    ? '<span class="status-success">Success</span>'
+                    : h.last_status === false
+                        ? '<span class="status-error">Failed</span>'
+                        : '<span class="status-pending">Pending</span>',
+            },
+            { label: 'Error', value: h.last_error || '-' },
+        ],
+        source: () => statusRows,
+    },
+    'hosts-table': {
+        title: 'Host',
+        items: (h) => [
+            { label: 'ID', value: String(h.id) },
+            { label: 'Hostname', value: h.hostname },
+            { label: 'Username', value: h.username },
+            { label: 'Created at', value: formatFullTime(h.created_at) },
+        ],
+        source: () => hostsRows,
+    },
+    'history-table': {
+        title: 'History entry',
+        items: (e) => [
+            { label: 'Timestamp', value: formatFullTime(e.timestamp) },
+            { label: 'Action', value: e.action },
+            { label: 'Hostname', value: e.hostname || '-' },
+            { label: 'IP', value: e.ip || '-' },
+            { label: 'Details', value: e.details || '-' },
+        ],
+        source: () => historyRows,
+    },
+};
+
+Object.entries(rowDetailHandlers).forEach(([tableId, cfg]) => {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    if (!tbody) return;
+    tbody.addEventListener('click', (e) => {
+        // Don't intercept row-action buttons or links inside the row.
+        if (e.target.closest('button, a')) return;
+        const tr = e.target.closest('tr.tr-clickable');
+        if (!tr) return;
+        const idx = Number(tr.dataset.idx);
+        const row = cfg.source()[idx];
+        if (!row) return;
+        openDetailsModal(cfg.title, cfg.items(row));
+    });
+});
+
+// Row caches for the shared details modal (filled by each renderer)
+let statusRows = [];
+let hostsRows = [];
+let historyRows = [];
+
 // History
 let historyPage = 0;
 let historyHostnameFilter = '';
@@ -454,13 +524,14 @@ async function loadHistory(page = 0) {
         const data = await response.json();
 
         const tbody = document.querySelector('#history-table tbody');
-        tbody.innerHTML = data.entries.map(entry => `
-            <tr>
-                <td>${entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-'}</td>
+        historyRows = data.entries;
+        tbody.innerHTML = historyRows.map((entry, i) => `
+            <tr class="tr-clickable" data-idx="${i}">
+                <td><time datetime="${entry.timestamp || ''}" title="${escapeHtml(formatFullTime(entry.timestamp))}">${escapeHtml(formatRelativeTime(entry.timestamp))}</time></td>
                 <td>${escapeHtml(entry.action)}</td>
                 <td>${entry.hostname ? escapeHtml(entry.hostname) : '-'}</td>
-                <td>${entry.ip || '-'}</td>
-                <td>${entry.details ? escapeHtml(entry.details) : '-'}</td>
+                <td class="col-secondary">${escapeHtml(entry.ip || '-')}</td>
+                <td class="col-secondary">${entry.details ? escapeHtml(entry.details) : '-'}</td>
             </tr>
         `).join('');
 
@@ -545,6 +616,37 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function formatRelativeTime(iso) {
+    if (!iso) return 'Never';
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return '-';
+    const diffSec = Math.round((Date.now() - then) / 1000);
+    const abs = Math.abs(diffSec);
+    if (abs < 60) return 'just now';
+    if (abs < 3600) return `${Math.round(abs / 60)}m`;
+    if (abs < 86400) return `${Math.round(abs / 3600)}h`;
+    if (abs < 86400 * 7) return `${Math.round(abs / 86400)}d`;
+    return new Date(iso).toLocaleDateString();
+}
+
+function formatFullTime(iso) {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString();
+}
+
+// Open the shared row-details modal. `items` is [{label, value, html?}, …];
+// when `html` is true the value is inserted as-is, otherwise it's escaped.
+function openDetailsModal(title, items) {
+    document.getElementById('details-modal-title').textContent = title;
+    const body = document.getElementById('details-modal-body');
+    body.innerHTML = items.map(it => `
+        <dt>${escapeHtml(it.label)}</dt>
+        <dd>${it.html ? it.value : escapeHtml(it.value ?? '-')}</dd>
+    `).join('');
+    document.getElementById('details-modal').classList.remove('hidden');
 }
 
 // Initialize
