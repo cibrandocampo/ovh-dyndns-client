@@ -13,6 +13,7 @@ is in place::
 """
 
 import argparse
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -28,8 +29,8 @@ from infrastructure.database import SqliteRepository, init_db  # noqa: E402
 from infrastructure.database.database import get_db_session  # noqa: E402
 from infrastructure.database.models import History, Host, Settings, State, User  # noqa: E402
 
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "admin"
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
 PUBLIC_IP = "1.2.3.4"
 
 # (hostname, username, password, last_status, last_error, age_minutes)
