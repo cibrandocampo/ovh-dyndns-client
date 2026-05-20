@@ -136,6 +136,36 @@ Images are also rebuilt weekly to pick up base-image and dependency security pat
 
 ---
 
+## Advanced configuration
+
+For most self-hosted deployments the defaults are fine — skip this section unless you have a specific need.
+
+On first boot the container auto-generates two secrets and persists them under `data/` with mode `0600`:
+
+| File | Purpose |
+|------|---------|
+| `data/.jwt_secret` | Signs JWT access tokens |
+| `data/.encryption_key` | Fernet key that encrypts OVH passwords at rest |
+
+Because the database and its secrets live in the same `data/` volume, migrating or backing up the deployment means copying that directory — the secrets travel with the data automatically.
+
+You can pin either secret via environment variable if you need to:
+
+```env
+# Fix the JWT signing key — useful when running multiple replicas or
+# when you want an explicit key backup outside the data directory.
+JWT_SECRET=<your-32-byte-url-safe-string>
+
+# Fix the encryption key — CRITICAL: if you set this, keep a copy.
+# Losing the key with encrypted hosts in the database makes those
+# credentials permanently unrecoverable.
+ENCRYPTION_KEY=<your-44-byte-base64-fernet-key>
+```
+
+The env var always takes precedence over the persisted file.
+
+---
+
 ## Documentation
 
 - [API Reference](https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/docs/API.md) — REST API endpoints and examples
