@@ -83,29 +83,48 @@ Log verbosity is controlled by the `LOGGER_LEVEL` environment variable (`DEBUG`,
 ```yaml
 services:
   ovh-dyndns-client:
-    image: cibrandocampo/ovh-dyndns-client:stable
-    container_name: ovh-dyndns-client
+    image: cibrandocampo/ovh-dyndns-client:${DOCKER_OVH_VERSION:-stable}
+    container_name: "${PROJECT_NAME:-ovh-dyndns-client}"
     init: true
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:${API_PORT:-8000}"
     volumes:
-      - ./data:/app/data
+      - ovh-dyndns-data:/app/data
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${API_PORT:-8000}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  ovh-dyndns-data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "${DATA_PATH:-./data}"
 ```
 
-2. **Run:**
+2. **Create `.env` and data directory:**
+
+```bash
+touch .env
+mkdir -p data
+```
+
+All variables have defaults — `.env` can stay empty or be used to override them (see [docs/CONFIGURATION.md](https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/docs/CONFIGURATION.md)).
+
+3. **Run:**
 
 ```bash
 docker compose up -d
 ```
 
-3. **Access:** Open http://localhost:8000
+4. **Access:** Open http://localhost:8000
 
 Default credentials: `admin` / `admin` (password change required on first login)
 
