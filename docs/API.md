@@ -188,10 +188,7 @@ curl http://localhost:8000/api/settings/ \
 curl -X PUT http://localhost:8000/api/settings/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "update_interval": 600,
-    "logger_level": "DEBUG"
-  }'
+  -d '{"update_interval": 600}'
 ```
 
 ## Interactive Documentation

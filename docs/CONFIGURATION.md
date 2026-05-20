@@ -15,7 +15,7 @@
 | `ENCRYPTION_KEY` | auto-generated and persisted at `data/.encryption_key` | Fernet key (44-byte base64) used to encrypt OVH host passwords at rest. Auto-generated on first start. **Losing this file with encrypted hosts in the database makes those credentials unrecoverable.** |
 | `ADMIN_USERNAME` | `admin` | Default admin username |
 | `ADMIN_PASSWORD` | `admin` | Default admin password (must be changed on first login) |
-| `LOGGER_NAME` | `ovh-dydns` | Logger name |
+| `LOGGER_NAME` | `ovh-dyndns` | Logger name |
 | `LOGGER_LEVEL` | `INFO` | Initial log level |
 
 ## Settings (Configurable via UI)
@@ -122,27 +122,47 @@ encrypted hosts but no key and fail-fast. Two safe options:
 ## Example `.env` File
 
 ```ini
+# OVH DynDNS Client — Environment Variables
+# Copy this file to .env and fill in your values.
+
+# ── Required ─────────────────────────────────────────────────────────────────
+
 # Project
 PROJECT_NAME=ovh-dyndns-client
 DOCKER_OVH_VERSION=stable
 
-# API
+# API port exposed on the host
 API_PORT=8000
 
-# Data persistence (SQLite + secrets — protect this directory!)
+# Host path for the data volume (SQLite database + auto-generated secrets).
+# Everything the service needs to persist lives here — back it up regularly.
 DATA_PATH=./data
 
-# Security — both auto-generated under data/ if not set.
-# Set explicit values only if you need them fixed across deployments.
+# Admin username for the web interface
+ADMIN_USERNAME=admin
+
+# Logging level: DEBUG | INFO | WARNING | ERROR | CRITICAL
+LOGGER_LEVEL=INFO
+
+# ── Optional ─────────────────────────────────────────────────────────────────
+
+# Initial admin password.
+# If not set, the default is 'admin' and the service will require a password
+# change on first login. Set this only if you want a different password for
+# the very first boot (e.g. automated deployments).
+# ADMIN_PASSWORD=
+
+# JWT signing key and encryption key for OVH passwords at rest.
+# Both are auto-generated on first boot and persisted under DATA_PATH with
+# mode 0600 — for a standard single-container deployment you do not need to
+# set these here.
+# Use explicit values when you need the keys to be fixed and portable: e.g.
+# migrating to a new host without copying the data directory, running multiple
+# replicas, or injecting secrets via Docker Swarm / Kubernetes.
+# WARNING: losing ENCRYPTION_KEY with encrypted hosts in the database makes
+# those OVH credentials permanently unrecoverable.
 # JWT_SECRET=
 # ENCRYPTION_KEY=
-
-# Admin user — change immediately after first login!
-ADMIN_USERNAME=admin
-# ADMIN_PASSWORD=  # default 'admin', change required on first login
-
-# Logging
-LOGGER_LEVEL=INFO
 ```
 
 ## Docker Compose

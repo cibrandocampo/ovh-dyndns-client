@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cibrandocampo.github.io/ovh-dyndns-client/sitemap.xml
