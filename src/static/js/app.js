@@ -299,7 +299,6 @@ async function loadHosts() {
         hostsRows = data;
         tbody.innerHTML = hostsRows.map((host, i) => `
             <tr class="tr-clickable" data-idx="${i}">
-                <td class="col-secondary">${host.id}</td>
                 <td>${escapeHtml(host.hostname)}</td>
                 <td class="col-secondary">${escapeHtml(host.username)}</td>
                 <td class="col-secondary"><time datetime="${host.created_at || ''}" title="${escapeHtml(formatFullTime(host.created_at))}">${escapeHtml(host.created_at ? formatFullTime(host.created_at) : '-')}</time></td>
@@ -444,7 +443,6 @@ const rowDetailHandlers = {
     'hosts-table': {
         title: 'Host',
         items: (h) => [
-            { label: 'ID', value: String(h.id) },
             { label: 'Hostname', value: h.hostname },
             { label: 'Username', value: h.username },
             { label: 'Created at', value: formatFullTime(h.created_at) },
