@@ -272,18 +272,6 @@ class TestAPIExtended(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["update_interval"], 600)
 
-    def test_settings_invalid_log_level(self):
-        """Test settings with invalid log level."""
-        headers = self.get_auth_header()
-        response = self.client.put(
-            "/api/settings/",
-            json={
-                "logger_level": "TRACE"  # Not a valid level
-            },
-            headers=headers,
-        )
-        self.assertEqual(response.status_code, 422)
-
     def test_settings_interval_too_low(self):
         """Test settings with interval below minimum."""
         headers = self.get_auth_header()

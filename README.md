@@ -55,11 +55,11 @@ Creating a host takes seconds: hostname, OVH username, and password. That is all
 
 ### Settings — tune the behaviour without touching a config file
 
-<img src="https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-settings.png" align="right" width="380" alt="Settings screen with update interval selector and log level dropdown"/>
+<img src="https://raw.githubusercontent.com/cibrandocampo/ovh-dyndns-client/main/docs/dashboard-settings.png" align="right" width="380" alt="Settings screen with update interval selector"/>
 
-The check interval and log verbosity can be adjusted from the web interface at any time — no restart, no editing environment variables. Lower the interval if your IP changes frequently; raise it if you want to reduce external API calls.
+The check interval can be adjusted from the web interface at any time — no restart, no editing environment variables. Lower the interval if your IP changes frequently; raise it if you want to reduce external API calls.
 
-Log level controls how much detail appears in the container logs, useful when troubleshooting a failed update or verifying that a specific host was reached.
+Log verbosity is controlled by the `LOGGER_LEVEL` environment variable (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`; default `INFO`).
 
 <br clear="right"/>
 

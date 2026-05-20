@@ -336,10 +336,10 @@ class SqliteRepository(IpStateStore, HostsRepository):
         with get_db_session() as db:
             settings = db.query(Settings).filter(Settings.id == 1).first()
             if settings:
-                return {"update_interval": settings.update_interval, "logger_level": settings.logger_level}
-            return {"update_interval": 300, "logger_level": "INFO"}
+                return {"update_interval": settings.update_interval}
+            return {"update_interval": 300}
 
-    def update_settings(self, update_interval: int = None, logger_level: str = None) -> dict:
+    def update_settings(self, update_interval: int = None) -> dict:
         """Update application settings."""
         with get_db_session() as db:
             settings = db.query(Settings).filter(Settings.id == 1).first()
@@ -349,21 +349,19 @@ class SqliteRepository(IpStateStore, HostsRepository):
 
             if update_interval is not None:
                 settings.update_interval = update_interval
-            if logger_level is not None:
-                settings.logger_level = logger_level
 
             history = History(
                 action="settings_updated",
-                details=f"Settings updated: interval={settings.update_interval}, level={settings.logger_level}",
+                details=f"Settings updated: interval={settings.update_interval}",
             )
             db.add(history)
 
-            return {"update_interval": settings.update_interval, "logger_level": settings.logger_level}
+            return {"update_interval": settings.update_interval}
 
     def init_default_settings(self) -> None:
         """Initialize default settings if they don't exist."""
         with get_db_session() as db:
             settings = db.query(Settings).filter(Settings.id == 1).first()
             if not settings:
-                settings = Settings(id=1, update_interval=300, logger_level="INFO")
+                settings = Settings(id=1, update_interval=300)
                 db.add(settings)

@@ -266,7 +266,6 @@ class TestSqliteRepositoryExtended(unittest.TestCase):
         repo = SqliteRepository()
         settings = repo.get_settings()
         self.assertEqual(settings["update_interval"], 300)
-        self.assertEqual(settings["logger_level"], "INFO")
 
     def test_update_settings_creates_if_not_exists(self):
         """Test that update_settings creates settings if they don't exist."""
@@ -279,15 +278,8 @@ class TestSqliteRepositoryExtended(unittest.TestCase):
         repo = SqliteRepository()
         repo.init_default_settings()
 
-        # Update only interval
         settings = repo.update_settings(update_interval=900)
         self.assertEqual(settings["update_interval"], 900)
-        self.assertEqual(settings["logger_level"], "INFO")
-
-        # Update only level
-        settings = repo.update_settings(logger_level="DEBUG")
-        self.assertEqual(settings["update_interval"], 900)
-        self.assertEqual(settings["logger_level"], "DEBUG")
 
     def test_update_settings_creates_history(self):
         """Test that updating settings creates history entry."""

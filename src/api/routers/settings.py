@@ -20,12 +20,10 @@ def set_settings_change_callback(callback):
 
 class SettingsResponse(BaseModel):
     update_interval: int
-    logger_level: str
 
 
 class SettingsUpdate(BaseModel):
     update_interval: Optional[int] = Field(None, ge=60, le=86400, description="Update interval in seconds (60-86400)")
-    logger_level: Optional[str] = Field(None, pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
 
 
 @router.get("/", response_model=SettingsResponse)
@@ -39,7 +37,7 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
 async def update_settings(settings: SettingsUpdate, current_user: dict = Depends(get_current_user)):
     """Update application settings."""
     repository = SqliteRepository()
-    result = repository.update_settings(update_interval=settings.update_interval, logger_level=settings.logger_level)
+    result = repository.update_settings(update_interval=settings.update_interval)
 
     # Notify about settings change
     if _on_settings_change:
