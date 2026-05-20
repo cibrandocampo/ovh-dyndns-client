@@ -25,7 +25,7 @@ docker compose -f dev/docker-compose.yaml ps          # Check status
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| `ovh_dyndns_dev` | 8000 | FastAPI dev server + source bind mount |
+| `ovh-dyndns-dev` | 8000 | FastAPI dev server + source bind mount |
 
 The app is available at `http://localhost:8000`.
 
@@ -33,24 +33,24 @@ The app is available at `http://localhost:8000`.
 
 ```bash
 # Shell
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev bash
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev bash
 
 # Run the application
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python main.py
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev python main.py
 
 # Tests
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ -v
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/test_api.py -v            # one file
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/test_api.py::TestClass::test_method -v  # one test
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev python -m pytest test/ -v
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev python -m pytest test/test_api.py -v            # one file
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev python -m pytest test/test_api.py::TestClass::test_method -v  # one test
 
 # Tests with coverage
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ --cov=. --cov-report=term-missing
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ --cov=. --cov-report=term-missing --cov-fail-under=70
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev python -m pytest test/ --cov=. --cov-report=term-missing
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev python -m pytest test/ --cov=. --cov-report=term-missing --cov-fail-under=70
 
 # Lint & format
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff check .
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff format --check .
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff format .
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev ruff check .
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev ruff format --check .
+docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev ruff format .
 ```
 
 ## Makefile shortcuts (from `dev/`)

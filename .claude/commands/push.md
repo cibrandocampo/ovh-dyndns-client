@@ -1,5 +1,5 @@
 ---
-description: Update documentation, commit with pre-commit, create PR, and verify CI pipeline
+description: Update documentation, commit, create PR, and verify CI pipeline
 argument-hint: <change description or task-id (optional)>
 ---
 
@@ -10,7 +10,7 @@ argument-hint: <change description or task-id (optional)>
 
 ---
 
-## Step 1 — Review current state
+## Step 1 — Review Current State
 
 1. Run `git status` to see modified, added, and untracked files.
 2. Run `git diff --stat` to see a summary of changes.
@@ -25,43 +25,29 @@ If there are no changes, inform the user and stop.
 
 ---
 
-## Step 2 — Update documentation
+## Step 2 — Update Documentation
 
-Review whether the changes require documentation updates:
+Skip this step entirely if the changes came from `/fix` and touched no structure, conventions, or configuration.
 
-### Documentation checklist
+Otherwise, review whether the changes require documentation updates:
 
+### Documentation Checklist
+
+- [ ] **`docs/configuration.md`**: are there new environment variables? Did any existing one change?
 - [ ] **`README.md`**: do the changes affect installation or usage instructions?
 - [ ] **`CLAUDE.md`**: are there new patterns or conventions Claude should know?
 - [ ] **Skills (`.claude/skills/`)**: did any convention documented in a skill change?
-- [ ] **`docs/`**: did the architecture, configuration, or API contract change?
+- [ ] **`docs/ARCHITECTURE.md`**: did the system architecture change?
 
-For each applicable item:
-1. Read the current file.
-2. Update with the new information.
-3. Don't add unnecessary documentation — only what changed.
-
-Ask the user with `AskUserQuestion` if there is anything additional to document.
+For each applicable item: read the current file, update with the new information, don't add unnecessary documentation.
 
 ---
 
-## Step 3 — Verify tests locally
+## Step 3 — Pre-Commit Validation
 
 **Skip this step if `$1` has `## Code Review — APPROVED`** — QA already ran the full suite.
 
-Otherwise, make sure the dev environment is running:
-```bash
-docker compose -f dev/docker-compose.yaml ps
-```
-
-Run lint and tests:
-```bash
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff check .
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff format --check .
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ -v
-```
-
-If any fail: **stop, fix, and re-verify.** Do not commit with broken tests.
+Otherwise, run the pre-commit sequence defined in the `git-conventions` skill. Do not proceed if any step fails.
 
 ---
 
@@ -85,14 +71,12 @@ If the pre-commit hook fails: fix, `git add`, new commit (never `--amend`).
 
 ## Step 5 — Pull Request
 
-### Create branch (if needed)
+### Create Branch (if needed)
 
 If you are on `main`, create a descriptive branch:
 ```bash
 git checkout -b <type>/<descriptive-name>
 ```
-
-Examples: `feat/ipv6-support`, `fix/ovh-token-refresh`, `chore/docker-hardening`
 
 ### Push
 
@@ -104,58 +88,27 @@ git push -u origin <branch>
 
 ### Create PR
 
-```bash
-gh pr create --title "<concise title>" --body "$(cat <<'EOF'
-## Summary
-
-- Bullet 1
-- Bullet 2
-
-## Test plan
-
-- [ ] Unit tests pass
-- [ ] Lint/format clean
-- [ ] (other specific checks)
-EOF
-)"
-```
-
-- Title: <70 characters, in English
-- Body: clear summary + test plan with checklist
+Invoke the `pr-create` skill — it will analyse the branch, build the PR body, and open the PR.
 
 ---
 
 ## Step 6 — Verify CI
 
-The GitHub Actions pipeline runs:
-- `lint-and-test`: ruff check + ruff format --check + pytest with coverage
-- `docker-build`: builds and pushes Docker image (on main/tag only)
-
-### Monitor
+Monitor the pipeline after the PR is created:
 
 ```bash
 gh pr checks <pr-number> --watch
 ```
 
-Or to see the status of a specific run:
-```bash
-gh run list --limit 1
-gh run view <run-id>
-```
+### If the Pipeline Fails
 
-### If the pipeline fails
+1. Identify which job failed: `gh run view <run-id> --log-failed`
+2. Diagnose the error.
+3. Fix locally and verify it passes.
+4. Create a **new commit** (not amend) and push.
+5. Repeat until pipeline is green.
 
-1. Identify which job failed:
-   ```bash
-   gh run view <run-id> --log-failed
-   ```
-2. Diagnose the error in the output.
-3. Fix locally.
-4. Verify it passes locally (tests + lint).
-5. Create a **new commit** (not amend) and push.
-6. Repeat until pipeline is green.
-
-### When the pipeline passes
+### When the Pipeline Passes
 
 Inform the user with:
 - PR URL
@@ -164,10 +117,9 @@ Inform the user with:
 
 ---
 
-## Unbreakable rules
+## Unbreakable Rules
 
-- **Local tests BEFORE commit**: never commit without verifying.
-- **Apply `git-conventions` skill**: format, commit rules, and pre-commit hook handling.
+- **`git-conventions` skill**: apply it for the pre-commit sequence, commit format, and pre-commit hook handling.
 - **Never `push --force`**: if there are conflicts, resolve with merge.
 - **Green pipeline**: do not consider it done until CI passes.
 - **If CI fails, fix it**: do not ignore it or ask the user to handle it manually.

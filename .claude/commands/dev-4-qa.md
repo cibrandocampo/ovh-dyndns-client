@@ -10,19 +10,19 @@ argument-hint: <task-id, e.g.: T001>
 
 ---
 
-## Step 1 — Read the task file
+## Step 1 — Read the Task File
 
 1. Locate the file `docs/tasks/$1*.md` and read it in full.
 2. Extract:
    - **DoD**: the acceptance criteria.
    - **Evidence table**: commands, files, conditions.
    - **Dependencies**: are they completed?
-3. Read the execution evidence from `/dev-3-run` (section `## Execution evidence`).
+3. Read the execution evidence from `/dev-3-run` (section `## Execution Evidence`).
 4. Read `CLAUDE.md` and `MEMORY.md` for context.
 
 ---
 
-## Step 2 — Prepare environment and evidence
+## Step 2 — Prepare Evidence Folder
 
 ```bash
 mkdir -p docs/tasks/evidence/$TASK_ID/qa
@@ -30,115 +30,68 @@ mkdir -p docs/tasks/evidence/$TASK_ID/qa
 
 QA evidence goes separate from dev-3-run evidence to avoid contamination.
 
-Make sure the dev environment is running:
-```bash
-docker compose -f dev/docker-compose.yaml ps
-```
-
-If the container is not running, start it before continuing:
-```bash
-docker compose -f dev/docker-compose.yaml up -d
-```
-
 ---
 
-## Step 3 — Progressive verification
+## Step 3 — Progressive Verification
 
 **Do not trust dev-3-run evidence. Re-execute EVERYTHING.**
 
-Verification follows a strict order from smallest to largest scope. If a phase fails,
-the following phases are meaningless — skip directly to the verdict (Step 5).
+Verification follows a strict order from smallest to largest scope. If a phase fails, the following phases are meaningless — skip directly to the verdict (Step 5).
 
 Each command saves its evidence:
 ```bash
 <command> 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/<file>.txt
 ```
 
-### 3.1 — Lint & format
+See `dev-workflow` skill for the project's specific lint, test, build, and E2E commands.
 
-Run linters and formatters. **If they fail, fix before continuing.**
+### 3.1 — Lint & Format
 
-```bash
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff check . 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/ruff_check.txt
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev ruff format --check . 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/ruff_format.txt
-```
+Run linters and formatters. **If they fail, fix before continuing.** Save output to `qa/lint_backend.txt`, `qa/lint_frontend.txt`, etc.
 
-**If any fail:**
-1. Fix: `ruff format .` / `ruff check --fix .`
-2. Re-run checks and save clean evidence.
-3. Note the correction in the QA report (not a blocker, but documented).
+If any fail: fix, re-run, save clean evidence, note the correction in the QA report.
 
-### 3.2 — Unit tests (targeted)
+### 3.2 — Unit Tests (Targeted)
 
-Run tests **only for the files modified by the task**.
+Run tests **only for the files/apps modified by the task**.
 
-1. Read the "Files to create/modify" section of the task file.
-2. Identify the affected test files in `test/`.
-3. Run only those:
+1. Read the "Files to Create/Modify" section of the task file.
+2. Run only the tests covering those files. Save output to `qa/unit_<area>.txt`.
 
-```bash
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/<file>.py -v 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/unit_targeted.txt
-```
+If targeted unit tests fail → **RETURNED immediately.**
 
-If targeted unit tests fail → **RETURNED immediately**.
-There is no point continuing with integration or E2E on code that fails its own tests.
+### 3.2b — Coverage of New Lines
 
-### 3.2b — Coverage of new lines
+**Run after 3.2 passes.** For each file modified by the task, check coverage on new lines. Save output to `qa/coverage_<area>.txt`.
 
-**Run after 3.2 passes.** Check that every file modified by the task has adequate coverage.
+- **Target: 100%** on new lines — this is the goal and what codecov enforces.
+- **Hard minimum: 95%** — below this, RETURNED immediately.
+- Between 95–99%: document each uncovered line with an explicit justification in the QA report. Accept only if the justification is sound (e.g. a defensive branch that cannot be triggered without mocking internals).
 
-```bash
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ --cov=. --cov-report=term-missing 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/coverage.txt
-```
+> Lines that are structurally unreachable should be eliminated or refactored — not left uncovered.
 
-Read the output. For **each file listed in "Files to create/modify"** of the task:
-- Any file with uncovered lines that relate to the task's new code → **FAIL (blocker)**.
-- Overall coverage must remain ≥70%.
+If coverage is below 95% → **RETURNED immediately.**
 
-**If coverage fails → RETURNED immediately.**
+### 3.3 — Integration Tests (Full Suites)
 
-### 3.3 — Full test suite
+Run the full test suites to detect regressions in code not directly modified. Save output to `qa/tests_full.txt`.
 
-Run the complete suite to detect regressions:
+If there are failures here that were not in 3.2, the task introduced a regression → **RETURNED.**
 
-```bash
-docker compose -f dev/docker-compose.yaml exec ovh_dyndns_dev python -m pytest test/ -v 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/full_suite.txt
-```
+### 3.4 — E2E Tests
 
-If there are failures here that were not in 3.2, the task introduced a regression → **RETURNED**.
+**Run if** the task modifies UI or introduces a user-visible flow.
+**Skip if** the task is backend-only with no UI changes (document why it was skipped).
 
-### 3.4 — E2E tests (Playwright)
+Save output to `qa/e2e.txt`. Only **new** failures or those related to the task count as blockers.
 
-**Run if** the task modifies any API endpoint or user-visible behaviour.
-**Skip if** the task is internal-only with no API changes (document why it was skipped).
+### 3.5 — Functional DoD Checks
 
-```bash
-docker run --rm --network host \
-  -e E2E_USERNAME=admin \
-  -e E2E_PASSWORD=admin123 \
-  ovh-dyndns-e2e npx playwright test 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/e2e.txt
-```
-
-Only **new** failures or those related to the task count as blockers.
-
-### 3.5 — Functional DoD checks
-
-Go through EACH DoD item from the task file that **is not lint or tests** (those are
-already covered in 3.1–3.4). Typical examples:
-
-- Endpoint responds with expected status → `curl -sv ... 2>&1 | tee ...`
-- Domain model has correct field/default → Read the file
-- File created with expected content → Read tool
-- DNS record updated via OVH API → inspect logs or curl response
-
-For each functional check, execute the real command and save evidence:
-```bash
-<command> 2>&1 | tee docs/tasks/evidence/$TASK_ID/qa/dod_<name>.txt
-```
+Go through EACH DoD item from the task file that **is not lint or tests** (those are already covered in 3.1–3.4). For each functional check, execute the real command and save evidence to `qa/dod_<name>.txt`.
 
 **Don't invent checks**: only verify what the task's DoD explicitly requires.
 
-### Evidence file verification
+### Evidence File Verification
 
 For EACH file generated in the previous phases:
 
@@ -154,53 +107,41 @@ For EACH file generated in the previous phases:
 
 ---
 
-## Step 4 — Code review and scope
+## Step 4 — Code Review and Scope
 
 **Only if ALL Step 3 checks passed.** If there is any FAIL, skip directly to the verdict.
 
-### 4.1 — Scope verification
-
-Compare the task's objective with what was actually implemented:
+### 4.1 — Scope Verification
 
 1. Re-read the **"Objective"** section of the task file.
-2. Go through each step of the task file and verify it was completed:
-   - Was each file listed in "Files to create/modify" actually created/modified?
-   - Is any deliverable described in the steps missing?
-   - Was anything out of scope implemented that shouldn't be?
-3. If a deliverable is missing or the objective is not met → blocker.
+2. Verify each step was completed: files listed in "Files to Create/Modify" exist with the right changes, no out-of-scope work was added.
 
-### 4.2 — Code review
+### 4.2 — Code Review
 
-Read the code modified/created by the task:
-
-1. Read all files listed in "Files to create/modify" of the task file.
-2. Verify:
-   - Does it follow project conventions? (`backend-patterns` skill)
-   - Are there security issues? (injection, exposed secrets, unprotected endpoints)
-   - Are there uncovered edge cases?
-   - Is the code clean and maintainable?
-   - Do the tests cover the relevant cases for the task?
-3. If you find issues: they are additional blockers (B1, B2...).
+Read all files listed in "Files to Create/Modify":
+- Does it follow project conventions? (consult `.claude/skills/`)
+- Are there security issues? (injection, XSS, exposed data)
+- Are there uncovered edge cases?
+- Do the tests cover the relevant cases for the task?
 
 ---
 
 ## Step 5 — Verdict
 
-### Build verification table
+### Build Verification Table
 
 | # | Phase | Deliverable | Evidence file | Condition | Result |
 |---|-------|------------|---------------|-----------|--------|
-| 1 | 3.1 | Lint (ruff check) | `qa/ruff_check.txt` | No errors | PASS/FAIL |
-| 2 | 3.1 | Format (ruff format) | `qa/ruff_format.txt` | No diffs | PASS/FAIL |
-| 3 | 3.2 | Unit tests (targeted) | `qa/unit_targeted.txt` | 0 failures | PASS/FAIL |
-| 4 | 3.2b | Coverage | `qa/coverage.txt` | ≥70%, new lines covered | PASS/FAIL |
-| 5 | 3.3 | Full test suite | `qa/full_suite.txt` | 0 failures | PASS/FAIL |
-| 6 | 3.4 | E2E tests | `qa/e2e.txt` | No new failures | PASS/FAIL or N/A |
-| 7 | 3.5 | Functional DoD checks | `qa/dod_*.txt` | Per DoD | PASS/FAIL |
-| 8 | 4.1 | Scope completed | — | Objective met | PASS/FAIL |
-| 9 | 4.2 | Code review | — | No issues | PASS/FAIL |
+| 1 | 3.1 | Lint | `qa/lint_*.txt` | No errors | PASS/FAIL |
+| 2 | 3.2 | Unit tests (targeted) | `qa/unit_*.txt` | 0 failures | PASS/FAIL |
+| 3 | 3.2b | Coverage | `qa/coverage_*.txt` | 0 uncovered lines in modified files | PASS/FAIL |
+| 4 | 3.3 | Full test suite | `qa/tests_full.txt` | 0 failures | PASS/FAIL |
+| 5 | 3.4 | E2E tests | `qa/e2e.txt` | No new failures | PASS/FAIL or N/A |
+| 6 | 3.5 | Functional DoD | `qa/dod_*.txt` | Per DoD | PASS/FAIL |
+| 7 | 4.1 | Scope completed | — | Objective met | PASS/FAIL |
+| 8 | 4.2 | Code review | — | No issues | PASS/FAIL |
 
-### If all PASS → APPROVED
+### If All PASS → APPROVED
 
 Append to the task file:
 
@@ -209,7 +150,7 @@ Append to the task file:
 
 **Date**: YYYY-MM-DD
 
-### QA verification
+### QA Verification
 
 | # | Deliverable | Evidence | Result |
 |---|------------|----------|--------|
@@ -220,7 +161,7 @@ Append to the task file:
 (Positive notes, minor non-blocking suggestions if any)
 ```
 
-### If any FAIL → RETURNED
+### If Any FAIL → RETURNED
 
 Append to the task file:
 
@@ -229,7 +170,7 @@ Append to the task file:
 
 **Date**: YYYY-MM-DD
 
-### QA verification
+### QA Verification
 
 | # | Deliverable | Evidence | Result |
 |---|------------|----------|--------|
@@ -240,24 +181,33 @@ Append to the task file:
 - **B1**: Exact description of the problem. Affected file and line. What was expected vs what occurred.
 - **B2**: ...
 
-### Required action
+### Required Action
 
 Run `/dev-3-run $1` to fix the listed blockers.
 ```
 
 ---
 
-## Final step — Update INDEX.md
+## Final Step — Update INDEX.md and Suggest Next Action
 
 1. Read `docs/tasks/INDEX.md`.
-2. Update the **QA** column for the task:
-   - APPROVED → `Approved`
-   - RETURNED → `Returned (B1, B2...)`
+2. Update the **QA** column for the task: APPROVED → `Approved`, RETURNED → `Returned (B1, B2...)`.
 3. If INDEX.md doesn't exist, skip without error.
+
+### If APPROVED — check whether the feature is complete
+
+Read the full series in INDEX.md:
+- **If there are pending tasks**: inform the user and suggest the next one:
+  > "Task TXXX approved. Next: `/dev-3-run TYYY`"
+- **If all tasks in the series are approved**: the feature is complete. Suggest closing the cycle:
+  > "All tasks approved. Ready to commit and open a PR: `/push`"
+
+> By default, the commit happens once — when the full feature is done, not after each task.
+> If the user wants to commit after a specific task, they can run `/push` at any point.
 
 ---
 
-## Absolute rules — etched in stone
+## Absolute Rules — Etched in Stone
 
 - **If you didn't execute the command with Bash tool, you have no evidence.**
 - **If the output is not in a physical file in `docs/tasks/evidence/`, you have no evidence.**
