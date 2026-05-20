@@ -219,17 +219,14 @@ class TestSqliteRepository(unittest.TestCase):
         repo.init_default_settings()
         settings = repo.get_settings()
         self.assertEqual(settings["update_interval"], 300)
-        self.assertEqual(settings["logger_level"], "INFO")
 
         # Update settings
-        updated = repo.update_settings(update_interval=600, logger_level="DEBUG")
+        updated = repo.update_settings(update_interval=600)
         self.assertEqual(updated["update_interval"], 600)
-        self.assertEqual(updated["logger_level"], "DEBUG")
 
         # Verify persistence
         settings = repo.get_settings()
         self.assertEqual(settings["update_interval"], 600)
-        self.assertEqual(settings["logger_level"], "DEBUG")
 
     # ── Encryption + migration tests (T008) ───────────────────────────
 

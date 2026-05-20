@@ -25,7 +25,6 @@ These settings can be changed through the web interface or API without restartin
 | Setting | Default | Range | Description |
 |---------|---------|-------|-------------|
 | Update Interval | `300` | 60-86400 | How often to check for IP changes (seconds) |
-| Log Level | `INFO` | DEBUG, INFO, WARNING, ERROR, CRITICAL | Logging verbosity |
 
 ## Persisted secrets and `data/` directory
 

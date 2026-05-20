@@ -563,7 +563,6 @@ async function loadSettings() {
         const data = await response.json();
 
         document.getElementById('update-interval').value = data.update_interval;
-        document.getElementById('logger-level').value = data.logger_level;
     } catch (error) {
         console.error('Failed to load settings:', error);
     }
@@ -589,8 +588,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     messageEl.className = 'success-message';
 
     const data = {
-        update_interval: parseInt(document.getElementById('update-interval').value),
-        logger_level: document.getElementById('logger-level').value
+        update_interval: parseInt(document.getElementById('update-interval').value)
     };
 
     try {

@@ -210,16 +210,12 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("update_interval", data)
-        self.assertIn("logger_level", data)
 
         # Update settings
-        response = self.client.put(
-            "/api/settings/", json={"update_interval": 600, "logger_level": "DEBUG"}, headers=headers
-        )
+        response = self.client.put("/api/settings/", json={"update_interval": 600}, headers=headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["update_interval"], 600)
-        self.assertEqual(data["logger_level"], "DEBUG")
 
     def test_settings_validation(self):
         """Test settings validation."""
@@ -227,10 +223,6 @@ class TestAPI(unittest.TestCase):
 
         # Invalid interval (too low)
         response = self.client.put("/api/settings/", json={"update_interval": 10}, headers=headers)
-        self.assertEqual(response.status_code, 422)
-
-        # Invalid log level
-        response = self.client.put("/api/settings/", json={"logger_level": "INVALID"}, headers=headers)
         self.assertEqual(response.status_code, 422)
 
     def test_unauthorized_access(self):

@@ -20,7 +20,6 @@ class Settings(Base):
 
     id = Column(Integer, primary_key=True, default=1)
     update_interval = Column(Integer, default=300)
-    logger_level = Column(String, default="INFO")
 
 
 class Host(Base):
