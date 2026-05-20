@@ -11,6 +11,19 @@ BACKEND_LOGGER_NAME = "ovh-dyndns"
 API_LOGGER_NAME = "ovh-api"
 
 
+class _QuietPathFilter(logging.Filter):
+    """Suppress all uvicorn access log records at INFO level.
+
+    HTTP access logs (health checks, static assets, API calls) are noise in
+    production. The signal lives in the application logger: IP checks, DNS
+    updates, scheduler events. Access records pass through only when
+    uvicorn.access is set to DEBUG.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return logging.getLogger("uvicorn.access").isEnabledFor(logging.DEBUG)
+
+
 class ApiLogFormatter(logging.Formatter):
     """Custom formatter that replaces uvicorn logger names with 'ovh-api'."""
 
@@ -84,6 +97,11 @@ class Logger:
                     "datefmt": LOG_DATE_FORMAT,
                 },
             },
+            "filters": {
+                "quiet_paths": {
+                    "()": "infrastructure.logger._QuietPathFilter",
+                },
+            },
             "handlers": {
                 "default": {
                     "formatter": "default",
@@ -94,6 +112,7 @@ class Logger:
                     "formatter": "access",
                     "class": "logging.StreamHandler",
                     "stream": "ext://sys.stderr",
+                    "filters": ["quiet_paths"],
                 },
             },
             "loggers": {

@@ -3,7 +3,14 @@ import unittest
 from unittest.mock import patch
 
 from infrastructure.config import Config
-from infrastructure.logger import API_LOGGER_NAME, LOG_DATE_FORMAT, LOG_FORMAT, ApiLogFormatter, Logger
+from infrastructure.logger import (
+    API_LOGGER_NAME,
+    LOG_DATE_FORMAT,
+    LOG_FORMAT,
+    ApiLogFormatter,
+    Logger,
+    _QuietPathFilter,
+)
 
 
 class TestLogger(unittest.TestCase):
@@ -148,6 +155,36 @@ class TestApiLogFormatter(unittest.TestCase):
         self.assertNotIn(API_LOGGER_NAME, formatted)
 
 
+class TestQuietPathFilter(unittest.TestCase):
+    def setUp(self):
+        self.filter = _QuietPathFilter()
+        self.access_logger = logging.getLogger("uvicorn.access")
+
+    def _make_record(self, path):
+        record = logging.LogRecord(
+            name="uvicorn.access",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg='%s - "%s %s HTTP/%s" %d',
+            args=("127.0.0.1:1234", "GET", path, "1.1", 200),
+            exc_info=None,
+        )
+        return record
+
+    def test_all_paths_suppressed_at_info_level(self):
+        self.access_logger.setLevel(logging.INFO)
+        for path in ("/health", "/static/css/style.css", "/api/hosts/", "/api/status/"):
+            with self.subTest(path=path):
+                self.assertFalse(self.filter.filter(self._make_record(path)))
+
+    def test_all_paths_pass_at_debug_level(self):
+        self.access_logger.setLevel(logging.DEBUG)
+        for path in ("/health", "/static/js/app.js", "/api/hosts/", "/api/status/"):
+            with self.subTest(path=path):
+                self.assertTrue(self.filter.filter(self._make_record(path)))
+
+
 class TestUvicornLogConfig(unittest.TestCase):
     def setUp(self):
         Config._instance = None
@@ -173,6 +210,14 @@ class TestUvicornLogConfig(unittest.TestCase):
         config = Logger.get_uvicorn_log_config()
         self.assertEqual(config["formatters"]["default"]["()"], "infrastructure.logger.ApiLogFormatter")
         self.assertEqual(config["formatters"]["access"]["()"], "infrastructure.logger.ApiLogFormatter")
+
+    def test_get_uvicorn_log_config_has_quiet_paths_filter(self):
+        """Tests that the access handler has the quiet_paths filter registered."""
+        config = Logger.get_uvicorn_log_config()
+        self.assertIn("filters", config)
+        self.assertIn("quiet_paths", config["filters"])
+        self.assertEqual(config["filters"]["quiet_paths"]["()"], "infrastructure.logger._QuietPathFilter")
+        self.assertIn("quiet_paths", config["handlers"]["access"]["filters"])
 
     def test_get_uvicorn_log_config_with_custom_level(self):
         """Tests that custom level is applied to uvicorn config."""
