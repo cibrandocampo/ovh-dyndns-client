@@ -206,8 +206,7 @@ CREATE TABLE history (
 
 CREATE TABLE settings (
     id              INTEGER PRIMARY KEY DEFAULT 1,
-    update_interval INTEGER DEFAULT 300,
-    logger_level    TEXT DEFAULT 'INFO'
+    update_interval INTEGER DEFAULT 300
 );
 ```
 

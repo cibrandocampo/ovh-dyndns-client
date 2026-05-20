@@ -31,6 +31,32 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://cibrandocam
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="sitemap" href={`${import.meta.env.BASE_URL}/sitemap.xml`} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "OVH DynDNS Client",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Linux, Docker",
+      "description": "Self-hosted dynamic DNS client for OVH domains. Automatically updates DynHost DNS records when your public IP changes. One Docker container, REST API with JWT auth, encrypted credentials, no external dependencies.",
+      "url": "https://cibrandocampo.github.io/ovh-dyndns-client/",
+      "downloadUrl": "https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client",
+      "codeRepository": "https://github.com/cibrandocampo/ovh-dyndns-client",
+      "license": "https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/LICENSE",
+      "programmingLanguage": "Python",
+      "softwareVersion": "5",
+      "keywords": "OVH, DynDNS, dynamic DNS, DynHost, self-hosted, Docker, FastAPI",
+      "author": {
+        "@type": "Person",
+        "name": "Cibrán Docampo Piñeiro"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    })} />
   </head>
   <body class="min-h-screen bg-gradient-to-br from-ovh-950 via-slate-950 to-ovh-900 text-slate-100 antialiased">
     <slot />
