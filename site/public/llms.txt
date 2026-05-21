@@ -1,0 +1,30 @@
+# OVH DynDNS Client
+
+> A self-hosted dynamic DNS client for OVH domains. Keeps your DynHost DNS records pointed at your current public IP — one Docker container, no external dependencies.
+
+OVH DynDNS Client automatically detects when your public IP changes and updates your OVH DynHost DNS records in real time. It runs as a single Docker container with a web UI and a REST API, persists configuration in SQLite with encrypted credentials, and exposes a history of all updates.
+
+## Key facts
+
+- Self-hosted: one Docker container, no external services required
+- Automatic IP detection: polls at a configurable interval and updates only when the IP changes
+- Multiple hosts: manage any number of OVH DynHost entries, each with its own credentials
+- Encrypted credentials: OVH passwords are stored encrypted at rest (Fernet key in `data/`)
+- Web UI + REST API: manage hosts, view status and update history from a browser or via API
+- JWT authentication: secure API access with short-lived tokens
+- Auto-retry: failed updates are retried on the next check cycle
+- Multi-arch Docker image: linux/amd64, linux/arm64, linux/arm/v7
+- License: MIT — free to use, modify, and self-host
+
+## Tech stack
+
+- Backend: Python 3.14, FastAPI, SQLite
+- Infrastructure: Docker Compose, multi-arch images (amd64 + arm64 + arm/v7)
+
+## Links
+
+- [Project site](https://ovh-dyndns.cibran.es/)
+- [Source code](https://github.com/cibrandocampo/ovh-dyndns-client)
+- [Docker Hub](https://hub.docker.com/r/cibrandocampo/ovh-dyndns-client)
+- [API reference](https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/docs/API.md)
+- [Configuration guide](https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/docs/CONFIGURATION.md)
