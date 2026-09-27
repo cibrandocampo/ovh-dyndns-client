@@ -16,6 +16,6 @@ slowapi>=0.1.9
 pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-mock>=3.11.0
-httpx2>=2.4.0  # Required for FastAPI TestClient (starlette 1.3.1+)
+httpx2>=2.12.0  # Required for FastAPI TestClient (starlette 1.3.1+)
 ruff>=0.4.0
 gevent>=23.9.1  # Required for VS Code async debugging
