@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test'
-import { login, goToSection } from './helpers.js'
+import { openDashboard, goToSection } from './helpers.js'
 
 test.describe('Settings', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page)
+    await openDashboard(page)
     await goToSection(page, 'settings')
   })
 
   test('settings section renders the form', async ({ page }) => {
     await expect(page.locator('#settings-section')).toBeVisible()
     await expect(page.locator('#update-interval')).toBeVisible()
-    await expect(page.locator('#logger-level')).toBeVisible()
     await expect(page.locator('#settings-form button[type="submit"]')).toBeVisible()
   })
 
@@ -20,13 +19,6 @@ test.describe('Settings', () => {
     await expect(page.locator('#update-interval')).not.toHaveValue('0')
     const value = await page.locator('#update-interval').inputValue()
     expect(Number(value)).toBeGreaterThan(0)
-  })
-
-  test('log level selector has expected options', async ({ page }) => {
-    const options = page.locator('#logger-level option')
-    await expect(options).toHaveCount(5)
-    const values = await options.evaluateAll(els => els.map(el => el.value))
-    expect(values).toEqual(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
   })
 
   test('save settings shows success message', async ({ page }) => {

@@ -116,7 +116,7 @@ class TestMustChangePasswordEnforcement(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_change_password_clears_flag_and_token_unblocks(self):
-        """After change, the SAME token (still within TTL) must work everywhere."""
+        """After change, the token returned by change-password must work everywhere."""
         self._create_user(must_change=True)
         token = self._login()
 
@@ -127,8 +127,8 @@ class TestMustChangePasswordEnforcement(unittest.TestCase):
         )
         self.assertEqual(change.status_code, 200)
 
-        # Same token, previously blocked endpoint, now allowed.
-        response = self.client.get("/api/hosts/", headers=self._auth(token))
+        # New token, previously blocked endpoint, now allowed.
+        response = self.client.get("/api/hosts/", headers=self._auth(change.json()["access_token"]))
         self.assertEqual(response.status_code, 200)
 
     # ── Regression: user without the flag operates normally ──────────

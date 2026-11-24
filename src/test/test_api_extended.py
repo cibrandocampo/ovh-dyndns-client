@@ -137,8 +137,7 @@ class TestAPIExtended(unittest.TestCase):
         response = self.client.post(
             "/api/hosts/", json={"hostname": "", "username": "user", "password": "pass"}, headers=headers
         )
-        # Pydantic validation may allow empty strings
-        self.assertIn(response.status_code, [201, 422])
+        self.assertEqual(response.status_code, 422)
 
     def test_get_nonexistent_host(self):
         """Test getting a host that doesn't exist."""

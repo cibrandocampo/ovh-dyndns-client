@@ -1,9 +1,11 @@
+import hmac
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from infrastructure.database import SqliteRepository
 
-from .auth import decode_token
+from .auth import decode_token, password_fingerprint
 
 security = HTTPBearer()
 
@@ -33,6 +35,18 @@ async def get_authenticated_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Tokens are bound to the password they were issued for: a password
+    # change (or a deleted user) revokes every token issued before it.
+    user = SqliteRepository().get_user_by_username(username)
+    if user is None or not hmac.compare_digest(
+        str(payload.get("pwd", "")), password_fingerprint(user["password_hash"])
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

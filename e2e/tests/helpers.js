@@ -1,3 +1,6 @@
+// Session saved by global-setup.js and loaded into every test by default.
+export const STORAGE_STATE = '.auth/state.json'
+
 export const CREDS = {
   username: process.env.E2E_USERNAME ?? 'admin',
   password: process.env.E2E_PASSWORD ?? 'admin123',
@@ -30,6 +33,14 @@ export async function login(page) {
     await page.locator('#change-password-form button[type="submit"]').click()
     await dashboard.waitFor({ state: 'visible' })
   }
+}
+
+/**
+ * Opens the dashboard with the session saved by global-setup.js.
+ */
+export async function openDashboard(page) {
+  await page.goto('/')
+  await page.locator('#dashboard').waitFor({ state: 'visible' })
 }
 
 /**

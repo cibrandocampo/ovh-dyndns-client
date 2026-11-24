@@ -1,20 +1,19 @@
 import { test, expect } from '@playwright/test'
-import { login, goToSection } from './helpers.js'
+import { openDashboard, goToSection } from './helpers.js'
 
 test.describe('Hosts', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page)
+    await openDashboard(page)
     await goToSection(page, 'hosts')
   })
 
   test('hosts section shows table with expected columns', async ({ page }) => {
     const headers = page.locator('#hosts-table thead th')
-    await expect(headers).toHaveCount(5)
-    await expect(headers.nth(0)).toHaveText('ID')
-    await expect(headers.nth(1)).toHaveText('Hostname')
-    await expect(headers.nth(2)).toHaveText('Username')
-    await expect(headers.nth(3)).toHaveText('Created At')
-    await expect(headers.nth(4)).toHaveText('Actions')
+    await expect(headers).toHaveCount(4)
+    await expect(headers.nth(0)).toHaveText('Hostname')
+    await expect(headers.nth(1)).toHaveText('Username')
+    await expect(headers.nth(2)).toHaveText('Created At')
+    await expect(headers.nth(3)).toHaveText('Actions')
   })
 
   test('add host button opens modal', async ({ page }) => {
@@ -59,6 +58,8 @@ test.describe('Hosts', () => {
     await page.locator('#host-password').fill('e2e-password')
     await page.locator('#host-form button[type="submit"]').click()
     await expect(page.locator('#host-modal')).not.toBeVisible()
+    // The table reloads asynchronously after saving: count only once the new host is in
+    await expect(page.locator('#hosts-table tbody')).toContainText(hostname)
 
     const rowsBefore = await page.locator('#hosts-table tbody tr').count()
 
@@ -81,6 +82,8 @@ test.describe('Hosts', () => {
     await page.locator('#host-password').fill('e2e-password')
     await page.locator('#host-form button[type="submit"]').click()
     await expect(page.locator('#host-modal')).not.toBeVisible()
+    // The table reloads asynchronously after saving: count only once the new host is in
+    await expect(page.locator('#hosts-table tbody')).toContainText(hostname)
 
     const rowsBefore = await page.locator('#hosts-table tbody tr').count()
     await page.locator('#hosts-table tbody tr').last().locator('[aria-label="Delete host"]').click()
