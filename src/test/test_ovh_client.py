@@ -168,5 +168,22 @@ class TestOvhClient(unittest.TestCase):
         self.assertIn("Unknown error", error)
 
 
+class TestOvhClientQueryEncoding(unittest.TestCase):
+    @patch("requests.get")
+    def test_query_parameters_are_encoded_not_interpolated(self, mock_get):
+        """Characters like `&` or `#` in a hostname must not alter the OVH request."""
+        mock_get.return_value = MagicMock(status_code=200, text="good", ok=True)
+        host = HostConfig(hostname="a.example.com&myip=6.6.6.6#", username="user", password="pass")
+
+        OvhClient().update_ip(host, "192.168.1.1")
+
+        args, kwargs = mock_get.call_args
+        self.assertEqual(args[0], "https://www.ovh.com/nic/update")
+        self.assertEqual(
+            kwargs["params"],
+            {"system": "dyndns", "hostname": "a.example.com&myip=6.6.6.6#", "myip": "192.168.1.1"},
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

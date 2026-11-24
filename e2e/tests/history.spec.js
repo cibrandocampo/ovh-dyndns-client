@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
-import { login, goToSection } from './helpers.js'
+import { openDashboard, goToSection } from './helpers.js'
 
 test.describe('History', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page)
+    await openDashboard(page)
     await goToSection(page, 'history')
   })
 

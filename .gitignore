@@ -142,3 +142,6 @@ site/.astro
 site/node_modules
 site/dist
 site/public/screenshots
+
+# Playwright session saved by e2e/global-setup.js
+e2e/.auth/

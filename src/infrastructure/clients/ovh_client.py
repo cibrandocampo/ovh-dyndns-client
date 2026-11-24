@@ -83,12 +83,12 @@ class OvhClient(DnsUpdater):
         Returns:
             Tuple[bool, Optional[str]]: (success, error_message)
         """
-        url = f"{HOST}{PATH}?system={SYS_PARAM}&hostname={host.hostname}&myip={ip}"
+        params = {"system": SYS_PARAM, "hostname": host.hostname, "myip": str(ip)}
         auth = self._get_auth(host)
 
         try:
             self.logger.info(f"{host.hostname} | Updating IP to {ip}")
-            response = requests.get(url, auth=auth, timeout=OVH_HTTP_TIMEOUT)
+            response = requests.get(f"{HOST}{PATH}", params=params, auth=auth, timeout=OVH_HTTP_TIMEOUT)
             self.logger.info(f"{host.hostname} | Response: {response.status_code} {response.text}")
 
             if not response.ok:

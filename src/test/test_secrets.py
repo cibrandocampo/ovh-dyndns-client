@@ -115,3 +115,24 @@ class TestEncryptionKeyExists(_IsolatedTempDir):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSecretFilesNeverWorldReadable(_IsolatedTempDir):
+    """Secret files must be created with 0o600, not chmod-ed after being written."""
+
+    def _assert_created_private(self, create, filename):
+        from unittest.mock import patch
+
+        old_umask = os.umask(0o022)
+        try:
+            with patch.object(Path, "chmod"):  # a post-write chmod would hide the window
+                create()
+        finally:
+            os.umask(old_umask)
+        self.assertEqual(oct((self.data_dir / filename).stat().st_mode & 0o777), "0o600")
+
+    def test_jwt_secret_created_private(self):
+        self._assert_created_private(secrets_mod.get_or_create_jwt_secret, secrets_mod.JWT_SECRET_FILENAME)
+
+    def test_encryption_key_created_private(self):
+        self._assert_created_private(secrets_mod.get_or_create_encryption_key, secrets_mod.ENCRYPTION_KEY_FILENAME)

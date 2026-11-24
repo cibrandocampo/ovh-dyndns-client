@@ -163,6 +163,8 @@ document.getElementById('change-password-form').addEventListener('submit', async
             return;
         }
 
+        // The password change revokes the old token; keep the one it returned.
+        API.setToken(data.access_token);
         localStorage.removeItem('mustChangePassword');
         showPage('dashboard');
         showSection('status');
@@ -230,7 +232,7 @@ async function loadStatus() {
                 </td>
                 <td class="col-secondary">${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
                 <td class="col-actions">
-                    <button class="btn-icon btn-icon-done" onclick="forceUpdateHost('${escapeHtml(host.hostname)}')" aria-label="Force update">
+                    <button class="btn-icon btn-icon-done" onclick="forceUpdateHost(statusRows[${i}].hostname)" aria-label="Force update">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
                     </button>
                 </td>
@@ -307,7 +309,7 @@ async function loadHosts() {
                         <button class="btn-icon" onclick="editHost(${host.id})" aria-label="Edit host">
                             <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
                         </button>
-                        <button class="btn-icon btn-icon-delete" onclick="confirmDeleteHost(${host.id}, '${escapeHtml(host.hostname)}')" aria-label="Delete host">
+                        <button class="btn-icon btn-icon-delete" onclick="confirmDeleteHost(${host.id}, hostsRows[${i}].hostname)" aria-label="Delete host">
                             <svg class="icon icon-sm"><use href="/static/icons.svg#i-trash-2"/></svg>
                         </button>
                     </span>
@@ -599,7 +601,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
             return;
         }
 
-        messageEl.textContent = 'Settings saved successfully. Changes will take effect on next update cycle.';
+        messageEl.textContent = 'Settings saved successfully.';
     } catch (error) {
         messageEl.textContent = 'Connection error';
         messageEl.className = 'error-message';
@@ -607,11 +609,15 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 });
 
 // Utility
+// Also escapes quotes: the result is used inside HTML attributes too.
 function escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function formatRelativeTime(iso) {
