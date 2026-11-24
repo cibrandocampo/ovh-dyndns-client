@@ -73,7 +73,7 @@ docker compose -f dev/docker-compose.yaml exec -w /app ovh-dyndns-dev ruff forma
 ## Quick API verification
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/health    # 200
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health        # 200
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/hosts     # 401
 ```
 

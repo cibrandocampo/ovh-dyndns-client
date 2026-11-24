@@ -11,6 +11,8 @@
 
 - **Decision**: APScheduler for the DNS update loop instead of a cron job. **Why**: allows the update interval to be configured at runtime via the UI without restarting the container. **Date**: 2024-01.
 
+- **Decision**: JWTs carry a `pwd` claim (short SHA-256 of the user's bcrypt hash), checked on every request. **Why**: revoke all tokens on password change without a DB schema change (the project has no migration tool, only `create_all`). bcrypt re-salts on every change, so even re-setting the same password revokes old tokens. **Date**: 2026-11.
+
 ## Gotchas
 
 - **Dev compose file extension**: the dev stack uses `.yaml` (not `.yml`): `dev/docker-compose.yaml`. Commands that use `.yml` will fail silently or fall back to the prod compose.
@@ -21,7 +23,11 @@
 
 - **DISABLE_SCHEDULER**: set `DISABLE_SCHEDULER=1` when running the app in test mode to prevent the background scheduler from interfering with API tests.
 
-- **Password change flow**: the first login always triggers a `must_change_password` redirect. E2E tests must handle this via `Promise.race` or the `login()` helper; plain navigation to `/` will fail.
+- **Password change flow**: the first login always triggers a `must_change_password` redirect, handled by the E2E `login()` helper. A password change revokes every earlier token (see Architecture Decisions), so any client must switch to the `access_token` that `change-password` returns.
+
+- **E2E vs login rate limit**: `/api/auth/login` allows 5 requests/minute per IP, and E2E requests all come from one IP. The suite logs in once in `e2e/global-setup.js` and every test reuses the saved session (`storageState`); only `auth.spec.js` logs in for real. New tests must use `openDashboard(page)`, never `login(page)`. Back-to-back full runs need ~1 minute between them (3 logins each).
+
+- **Restarting the dev app**: never `sh -c 'pkill -f "python main.py"; ...'` — the pattern matches the `sh -c` itself and kills it. Kill the process, then start it with `docker compose -f dev/docker-compose.yaml exec -d -w /app ovh-dyndns-dev python main.py`.
 
 ## Environment
 

@@ -38,6 +38,17 @@ def _encryption_key_file() -> Path:
     return _data_dir() / ENCRYPTION_KEY_FILENAME
 
 
+def _write_private(path: Path, data: bytes) -> None:
+    """Create ``path`` readable only by its owner and write ``data``.
+
+    The mode is set at creation, so the secret is never world-readable, even
+    briefly. ``O_EXCL`` refuses to reuse a file that appeared meanwhile.
+    """
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+
+
 def get_or_create_jwt_secret() -> str:
     """Return the JWT signing secret.
 
@@ -54,8 +65,7 @@ def get_or_create_jwt_secret() -> str:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     new_secret = _secrets.token_urlsafe(JWT_SECRET_BYTES)
-    path.write_text(new_secret)
-    path.chmod(0o600)
+    _write_private(path, new_secret.encode("utf-8"))
     return new_secret
 
 
@@ -77,8 +87,7 @@ def get_or_create_encryption_key() -> bytes:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     new_key = Fernet.generate_key()
-    path.write_bytes(new_key)
-    path.chmod(0o600)
+    _write_private(path, new_key)
     return new_key
 
 

@@ -75,7 +75,7 @@ async def get_status(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/trigger", response_model=TriggerResponse)
-async def trigger_update(current_user: dict = Depends(get_current_user)):
+def trigger_update(current_user: dict = Depends(get_current_user)):
     """Trigger an immediate DNS update for all pending hosts."""
     if _controller is None:
         raise HTTPException(status_code=500, detail="Controller not initialized")
@@ -88,7 +88,7 @@ async def trigger_update(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/trigger/{hostname}", response_model=TriggerResponse)
-async def trigger_host_update(hostname: str, current_user: dict = Depends(get_current_user)):
+def trigger_host_update(hostname: str, current_user: dict = Depends(get_current_user)):
     """Force update a specific host's DNS record."""
     if _controller is None:
         raise HTTPException(status_code=500, detail="Controller not initialized")

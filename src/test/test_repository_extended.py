@@ -117,6 +117,32 @@ class TestSqliteRepositoryExtended(unittest.TestCase):
         host_updated = [h for h in history if h["action"] == "host_updated"]
         self.assertEqual(len(host_updated), 1)
 
+    def test_update_host_credentials_change_marks_host_pending(self):
+        """Changing hostname, username or password must re-queue an OK host for update."""
+        repo = SqliteRepository()
+        for field, value in (("hostname", "renamed.example.com"), ("username", "newuser"), ("password", "newpass")):
+            with self.subTest(field=field):
+                host = repo.create_host(f"{field}.example.com", "user", "pass")
+                repo.update_host_status(f"{field}.example.com", success=False, error="badauth")
+                repo.update_host_status(f"{field}.example.com", success=True)
+
+                updated = repo.update_host(host["id"], **{field: value})
+
+                self.assertIsNone(updated["last_status"])
+                self.assertIsNone(updated["last_error"])
+                pending = [h.hostname for h in repo.get_pending_hosts()]
+                self.assertIn(updated["hostname"], pending)
+
+    def test_update_host_with_unchanged_values_keeps_status(self):
+        """Re-submitting the same hostname/username is not a change."""
+        repo = SqliteRepository()
+        host = repo.create_host("same.example.com", "user", "pass")
+        repo.update_host_status("same.example.com", success=True)
+
+        updated = repo.update_host(host["id"], hostname="same.example.com", username="user")
+
+        self.assertTrue(updated["last_status"])
+
     def test_update_host_nonexistent(self):
         """Test updating non-existent host returns None."""
         repo = SqliteRepository()

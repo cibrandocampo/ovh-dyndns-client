@@ -177,12 +177,21 @@ class SqliteRepository(IpStateStore, HostsRepository):
             if not host:
                 return None
 
+            changed = password is not None
             if hostname is not None:
+                changed = changed or hostname != host.hostname
                 host.hostname = hostname
             if username is not None:
+                changed = changed or username != host.username
                 host.username = username
             if password is not None:
                 host.password = encrypt_password(password)
+
+            # New target or credentials: the last result no longer applies, so
+            # queue the host for the next update cycle.
+            if changed:
+                host.last_status = None
+                host.last_error = None
 
             history = History(action="host_updated", hostname=host.hostname, details=f"Host {host.hostname} updated")
             db.add(history)

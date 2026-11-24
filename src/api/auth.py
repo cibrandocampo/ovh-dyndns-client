@@ -1,3 +1,4 @@
+import hashlib
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -10,6 +11,7 @@ from infrastructure.secrets import get_or_create_jwt_secret
 
 DEFAULT_JWT_EXPIRATION_HOURS = 24
 ALGORITHM = "HS256"
+BCRYPT_MAX_BYTES = 72
 
 
 def get_jwt_secret() -> str:
@@ -24,8 +26,24 @@ def get_jwt_expiration_hours() -> int:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    """Verify a password against its hash.
+
+    bcrypt raises on inputs over 72 bytes; no stored password can be that
+    long, so such input simply does not match.
+    """
+    plain = plain_password.encode("utf-8")
+    if len(plain) > BCRYPT_MAX_BYTES:
+        return False
+    return bcrypt.checkpw(plain, hashed_password.encode("utf-8"))
+
+
+def password_fingerprint(password_hash: str) -> str:
+    """Short digest of the stored hash, embedded in tokens as the `pwd` claim.
+
+    The bcrypt hash is re-salted on every change, so tokens issued before a
+    password change stop matching and are rejected.
+    """
+    return hashlib.sha256(password_hash.encode("utf-8")).hexdigest()[:16]
 
 
 def hash_password(password: str) -> str:

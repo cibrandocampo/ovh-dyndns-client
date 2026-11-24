@@ -92,6 +92,8 @@ docker run --rm --network host \
 
 Default dev credentials: `admin` / `admin123` (set in `dev/docker-compose.yaml`).
 
+Login is rate-limited to 5 requests per minute, so the suite logs in once in `e2e/global-setup.js` and every test reuses that session. New tests should open the app with `openDashboard(page)` from `tests/helpers.js`, not log in. Leave about a minute between two full runs.
+
 ## Project structure
 
 ```

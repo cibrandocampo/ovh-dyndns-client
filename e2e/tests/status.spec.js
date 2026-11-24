@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
-import { login } from './helpers.js'
+import { openDashboard } from './helpers.js'
 
 test.describe('Status', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page)
+    await openDashboard(page)
     // Status section is shown by default after login
     await page.locator('#status-section').waitFor({ state: 'visible' })
   })

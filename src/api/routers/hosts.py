@@ -1,24 +1,47 @@
+import re
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+from sqlalchemy.exc import IntegrityError
 
 from api.dependencies import get_current_user
 from infrastructure.database import SqliteRepository
+from infrastructure.logger import Logger
 
 router = APIRouter(prefix="/api/hosts", tags=["hosts"])
+logger = Logger.get_logger()
+
+# Fully qualified domain name: dot-separated labels of 1-63 letters, digits or
+# hyphens (no leading/trailing hyphen), at least two labels, 253 chars max.
+_LABEL = r"(?!-)[A-Za-z0-9-]{1,63}(?<!-)"
+FQDN_RE = re.compile(rf"^(?=.{{1,253}}$){_LABEL}(?:\.{_LABEL})+$")
+
+
+def _validate_hostname(value: Optional[str]) -> Optional[str]:
+    if value is not None and not FQDN_RE.match(value):
+        raise ValueError("hostname must be a valid fully qualified domain name")
+    return value
 
 
 class HostCreate(BaseModel):
     hostname: str
-    username: str
-    password: str
+    username: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+
+    _check_hostname = field_validator("hostname")(_validate_hostname)
 
 
 class HostUpdate(BaseModel):
     hostname: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
+    username: Optional[str] = Field(None, min_length=1)
+    password: Optional[str] = Field(None, min_length=1)
+
+    _check_hostname = field_validator("hostname")(_validate_hostname)
+
+
+def _host_exists(hostname: str) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Host with hostname '{hostname}' already exists")
 
 
 class HostResponse(BaseModel):
@@ -44,12 +67,11 @@ async def create_host(host: HostCreate, current_user: dict = Depends(get_current
     repository = SqliteRepository()
     try:
         return repository.create_host(hostname=host.hostname, username=host.username, password=host.password)
-    except Exception as e:
-        if "UNIQUE constraint failed" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=f"Host with hostname '{host.hostname}' already exists"
-            )
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    except IntegrityError:
+        raise _host_exists(host.hostname)
+    except Exception:
+        logger.exception(f"{host.hostname} | Failed to create host")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create host")
 
 
 @router.get("/{host_id}", response_model=HostResponse)
@@ -66,9 +88,12 @@ async def get_host(host_id: int, current_user: dict = Depends(get_current_user))
 async def update_host(host_id: int, host: HostUpdate, current_user: dict = Depends(get_current_user)):
     """Update an existing host."""
     repository = SqliteRepository()
-    updated = repository.update_host(
-        host_id=host_id, hostname=host.hostname, username=host.username, password=host.password
-    )
+    try:
+        updated = repository.update_host(
+            host_id=host_id, hostname=host.hostname, username=host.username, password=host.password
+        )
+    except IntegrityError:
+        raise _host_exists(host.hostname)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Host with ID {host_id} not found")
     return updated

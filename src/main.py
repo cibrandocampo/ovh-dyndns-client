@@ -1,3 +1,4 @@
+import functools
 import threading
 import time
 
@@ -26,6 +27,9 @@ from infrastructure.secrets import (
 logger = Logger.get_logger()
 
 
+DEFAULT_UPDATE_INTERVAL = 300
+
+
 class SchedulerThread(threading.Thread):
     """Background thread that runs the DNS update scheduler."""
 
@@ -34,40 +38,59 @@ class SchedulerThread(threading.Thread):
         self.controller = controller
         self.repository = repository
         self._stop_event = threading.Event()
-        self._interval = None
+        self._wake_event = threading.Event()
+        self._interval = DEFAULT_UPDATE_INTERVAL
+
+    def _read_interval(self):
+        """Refresh the interval from the database, keeping the last one on error."""
+        try:
+            interval = self.repository.get_settings().get("update_interval", DEFAULT_UPDATE_INTERVAL)
+        except Exception:
+            logger.exception("Could not read settings, keeping the current update interval")
+            return
+        if interval != self._interval:
+            self._interval = interval
+            logger.info(f"Update interval set to {interval} seconds")
 
     def run(self):
         logger.info("Scheduler thread started")
 
         while not self._stop_event.is_set():
-            # Get current interval from database
-            settings = self.repository.get_settings()
-            interval = settings.get("update_interval", 300)
-
-            if self._interval != interval:
-                self._interval = interval
-                logger.info(f"Update interval set to {interval} seconds")
+            self._read_interval()
 
             try:
                 logger.info("Executing DNS update controller")
                 self.controller.handler()
                 logger.info("DNS update completed successfully")
-            except RuntimeError as e:
-                logger.error(f"Controller execution failed: {e}")
+            except Exception:
+                logger.exception("Controller execution failed")
 
-            # Wait for the interval, but check for stop event periodically
-            for _ in range(interval):
-                if self._stop_event.is_set():
+            # Sleep until the interval elapses. A wake-up (settings change)
+            # re-reads the interval and recomputes the deadline from the last
+            # run, so a shorter interval applies right away.
+            last_run = time.monotonic()
+            while not self._stop_event.is_set():
+                remaining = last_run + self._interval - time.monotonic()
+                if remaining <= 0:
                     break
-                time.sleep(1)
+                if self._wake_event.wait(remaining):
+                    self._wake_event.clear()
+                    self._read_interval()
+
+    def wake(self):
+        """Re-read the interval now instead of after the current wait."""
+        self._wake_event.set()
 
     def stop(self):
         self._stop_event.set()
+        self._wake_event.set()
 
 
-def on_settings_change(new_settings):
+def on_settings_change(new_settings, scheduler=None):
     """Callback when settings are changed via API."""
     logger.info(f"Settings changed: {new_settings}")
+    if scheduler is not None:
+        scheduler.wake()
 
 
 def launch_scheduler(controller, repository):
@@ -138,13 +161,13 @@ def main():
     # Set controller for API status endpoint
     set_controller(controller)
 
-    # Set settings change callback
-    set_settings_change_callback(on_settings_change)
-
     # Start the scheduler thread (unless `DISABLE_SCHEDULER=1`, e.g. during
     # screenshot capture where a fake-credential seed must not be clobbered
     # by an immediate OVH-update tick).
-    launch_scheduler(controller, repository)
+    scheduler = launch_scheduler(controller, repository)
+
+    # Settings changes wake the scheduler so a new interval applies at once
+    set_settings_change_callback(functools.partial(on_settings_change, scheduler=scheduler))
 
     import os
 

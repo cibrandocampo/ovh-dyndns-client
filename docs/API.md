@@ -44,6 +44,9 @@ curl -X POST http://localhost:8000/api/auth/change-password \
   -d '{"current_password": "old-pass", "new_password": "new-pass"}'
 ```
 
+The new password must be 6 to 72 bytes long. The change revokes every token
+issued before it; the response carries a new `access_token` to keep using.
+
 ### Rate limiting
 
 Authentication endpoints are rate-limited per client IP:
@@ -96,6 +99,10 @@ curl -X POST http://localhost:8000/api/hosts/ \
   }'
 ```
 
+`hostname` must be a fully qualified domain name (letters, digits, hyphens and
+dots); `username` and `password` must not be empty. Invalid input returns
+`422`; a hostname that already exists returns `409`.
+
 ### Update Host
 
 ```bash
@@ -104,6 +111,10 @@ curl -X PUT http://localhost:8000/api/hosts/1 \
   -H "Content-Type: application/json" \
   -d '{"hostname": "new-hostname.com"}'
 ```
+
+Only the fields sent are changed, with the same validation as on create.
+Changing the hostname, username or password marks the host as pending, so it
+is updated on the next cycle.
 
 ### Delete Host
 
