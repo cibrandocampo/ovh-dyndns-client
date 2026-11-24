@@ -151,7 +151,7 @@ Pre-built multi-arch images (linux/amd64, linux/arm64, linux/arm/v7) are publish
 | `latest` | Every push to `main` |
 | `stable` + `vX.Y.Z` | On GitHub release |
 
-Images are also rebuilt weekly to pick up base-image and dependency security patches.
+Images are also rebuilt weekly to pick up base-image security patches. Python dependencies are pinned and updated through monthly Dependabot PRs.
 
 ---
 

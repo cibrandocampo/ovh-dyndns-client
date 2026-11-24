@@ -16,7 +16,7 @@ RUN pip install --upgrade pip \
     && mkdir -p /install/wheels
 
 COPY requirements.txt .
-RUN pip wheel --no-cache-dir --wheel-dir /install/wheels -r requirements.txt
+RUN pip wheel --no-cache-dir --require-hashes --wheel-dir /install/wheels -r requirements.txt
 
 ## Stage 2 - Image creation ##
 FROM python:3.14-alpine

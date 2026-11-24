@@ -4,15 +4,25 @@
 # Per-folder developer shortcuts (build, up, down, test, lint, format)
 # stay in `dev/Makefile` — run `make -C dev <target>` for those.
 
-.PHONY: help screenshots site-dev site-build
+.PHONY: help lock screenshots site-dev site-build
 
 help:
 	@echo "Available top-level targets:"
+	@echo "  lock         Regenerate requirements.txt and dev/requirements.txt (pinned, with hashes)"
 	@echo "  screenshots  Regenerate docs/dashboard-*.png from the seeded dev container"
 	@echo "  site-dev     Run the Astro landing dev server (http://localhost:4321/ovh-dyndns-client/)"
 	@echo "  site-build   Build the Astro landing into site/dist/"
 	@echo ""
 	@echo "Per-folder developer shortcuts live in dev/Makefile (build, up, test, lint, ...)."
+
+lock:
+	docker run --rm -e CUSTOM_COMPILE_COMMAND="make lock" -v "$(CURDIR)":/r -w /r python:3.14-alpine sh -c '\
+		pip install -q --root-user-action=ignore pip-tools && \
+		pip-compile -q --upgrade --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url \
+			--output-file requirements.txt requirements.in && \
+		(cd dev && pip-compile -q --upgrade --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url \
+			--output-file requirements.txt requirements.in) && \
+		chown $(shell id -u):$(shell id -g) requirements.txt dev/requirements.txt'
 
 screenshots:
 	@echo "==> Bringing dev container up..."

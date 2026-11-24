@@ -69,6 +69,18 @@ The hook runs `ruff check` and `ruff format --check` inside the dev container. T
 
 If the hook fails, fix the issue and create a **new commit** — never `--amend`.
 
+## Dependencies
+
+Python dependencies are declared in `requirements.in` (runtime) and `dev/requirements.in` (dev-only, constrained by the runtime lockfile). The `requirements.txt` next to each one is a lockfile, pinned with hashes, and every image and CI job installs from it with `--require-hashes`.
+
+To add or bump a package, edit the `.in` file and regenerate both lockfiles:
+
+```bash
+make lock
+```
+
+Dependabot (`.github/dependabot.yml`) opens a grouped PR every month with minor and patch updates for the Python lockfiles and the landing site. Majors are never proposed, and 0.x packages (FastAPI, uvicorn, python-multipart, slowapi, ruff) only get patches: those are tested and adopted by hand. Runtimes (Python, Node, the Playwright image) are also bumped by hand. A non-blocking `audit` job in CI runs `pip-audit` and `npm audit` on every push and PR.
+
 ## E2E tests (Playwright)
 
 End-to-end tests run in a separate Docker image and use `--network host` to reach the app at `localhost:8000`. The dev app must be running first.
