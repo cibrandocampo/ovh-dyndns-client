@@ -154,6 +154,34 @@ class TestSchedulerThread(unittest.TestCase):
         self.assertFalse(scheduler.is_alive())
 
 
+class TestStartScheduler(unittest.TestCase):
+    def tearDown(self):
+        from api.routers.settings import set_settings_change_callback
+
+        set_settings_change_callback(None)
+
+    @patch("main.launch_scheduler")
+    def test_settings_change_wakes_the_launched_scheduler(self, mock_launch):
+        """The callback the settings router calls must reach the running scheduler."""
+        from api.routers import settings as settings_router
+
+        scheduler = mock_launch.return_value
+        result = main_module.start_scheduler("controller", "repository")
+
+        mock_launch.assert_called_once_with("controller", "repository")
+        self.assertIs(result, scheduler)
+        settings_router._on_settings_change({"update_interval": 60})
+        scheduler.wake.assert_called_once()
+
+    @patch("main.launch_scheduler", return_value=None)
+    def test_settings_change_without_scheduler_does_not_fail(self, _mock_launch):
+        """With `DISABLE_SCHEDULER=1` there is no thread to wake."""
+        from api.routers import settings as settings_router
+
+        self.assertIsNone(main_module.start_scheduler("controller", "repository"))
+        settings_router._on_settings_change({"update_interval": 60})
+
+
 class TestOnSettingsChange(unittest.TestCase):
     def test_wakes_the_scheduler(self):
         scheduler = MagicMock()

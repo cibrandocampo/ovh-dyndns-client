@@ -111,6 +111,17 @@ def launch_scheduler(controller, repository):
     return scheduler
 
 
+def start_scheduler(controller, repository):
+    """Launch the scheduler and wake it on settings changes.
+
+    Settings changes wake the scheduler so a new interval applies at once.
+    Extracted from `main()` so the wiring can be unit-tested.
+    """
+    scheduler = launch_scheduler(controller, repository)
+    set_settings_change_callback(functools.partial(on_settings_change, scheduler=scheduler))
+    return scheduler
+
+
 def main():
     """Main entry point of the application."""
     logger.info("Starting OVH DynDNS client")
@@ -164,10 +175,7 @@ def main():
     # Start the scheduler thread (unless `DISABLE_SCHEDULER=1`, e.g. during
     # screenshot capture where a fake-credential seed must not be clobbered
     # by an immediate OVH-update tick).
-    scheduler = launch_scheduler(controller, repository)
-
-    # Settings changes wake the scheduler so a new interval applies at once
-    set_settings_change_callback(functools.partial(on_settings_change, scheduler=scheduler))
+    start_scheduler(controller, repository)
 
     import os
 
