@@ -19,12 +19,14 @@ jobs:
         with:
           python-version: '3.14'
           cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            dev/requirements.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov httpx ruff
+          pip install --require-hashes -r requirements.txt -r dev/requirements.txt
 
       - name: Lint with ruff
         working-directory: src

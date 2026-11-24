@@ -1,0 +1,20 @@
+# Runtime dependencies. requirements.txt is compiled from this file with
+# hashes: edit here, then run `make lock`.
+
+# Core dependencies
+pydantic~=2.14
+requests~=2.34
+
+# API
+fastapi~=0.165.0
+uvicorn~=0.54.0
+
+# Database
+sqlalchemy~=2.1
+
+# Authentication
+PyJWT~=2.15
+bcrypt~=5.0
+python-multipart~=0.0.34
+cryptography~=50.0
+slowapi~=0.1.10

@@ -1,0 +1,65 @@
+# Only updates without weight: minor and patch, monthly and grouped.
+#   - Majors are never proposed. They are tested and adopted by hand.
+#   - In a 0.x package a minor can break things, so it only gets patches.
+#   - Runtimes (Python, Node) and GitHub Actions are not listed here, so
+#     nothing proposes changing them.
+version: 2
+updates:
+  # requirements.txt is compiled from requirements.in with hashes.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: fastapi
+        update-types: ['version-update:semver-minor']
+      - dependency-name: uvicorn
+        update-types: ['version-update:semver-minor']
+      - dependency-name: python-multipart
+        update-types: ['version-update:semver-minor']
+      - dependency-name: slowapi
+        update-types: ['version-update:semver-minor']
+
+  # The dev requirements are constrained by the runtime ones, so the same
+  # limits apply.
+  - package-ecosystem: pip
+    directory: /dev
+    schedule:
+      interval: monthly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: fastapi
+        update-types: ['version-update:semver-minor']
+      - dependency-name: uvicorn
+        update-types: ['version-update:semver-minor']
+      - dependency-name: python-multipart
+        update-types: ['version-update:semver-minor']
+      - dependency-name: slowapi
+        update-types: ['version-update:semver-minor']
+      - dependency-name: ruff
+        update-types: ['version-update:semver-minor']
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: monthly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@astrojs/check'
+        update-types: ['version-update:semver-minor']
+
+  # e2e is not listed: its only dependency, @playwright/test, must match the
+  # Playwright tag of the base image in e2e/Dockerfile, so both move by hand.

@@ -6,3 +6,5 @@ __pycache__/
 .git
 .dockerignore
 Dockerfile
+dev/data
+**/node_modules
