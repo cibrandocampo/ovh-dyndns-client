@@ -1,9 +1,14 @@
 import { defineConfig } from 'astro/config'
-import tailwind from '@astrojs/tailwind'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   site: 'https://ovh-dyndns.cibran.es',
   output: 'static',
   trailingSlash: 'ignore',
-  integrations: [tailwind()],
+  // Astro 7 defaults to JSX whitespace rules, which drop the spaces between
+  // inline elements written on separate lines. Keep the lossless mode.
+  compressHTML: true,
+  vite: {
+    plugins: [tailwindcss()],
+  },
 })

@@ -1,3 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #fcd34d;
+
+  --color-ovh-50: #f1f2f5;
+  --color-ovh-100: #dde0e8;
+  --color-ovh-300: #8d93a9;
+  --color-ovh-500: #454961;
+  --color-ovh-600: #3a3d52;
+  --color-ovh-700: #2d3041;
+  --color-ovh-800: #23252f;
+  --color-ovh-900: #181a22;
+  --color-ovh-950: #0e0f15;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

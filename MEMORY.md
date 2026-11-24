@@ -29,6 +29,10 @@
 
 - **Restarting the dev app**: never `sh -c 'pkill -f "python main.py"; ...'` — the pattern matches the `sh -c` itself and kills it. Kill the process, then start it with `docker compose -f dev/docker-compose.yaml exec -d -w /app ovh-dyndns-dev python main.py`.
 
+- **Site build on old CPUs**: Astro 7 compiles `.astro` files with a native Rust binary (`@astrojs/compiler-binding-linux-x64-gnu`) that dies with `Illegal instruction` on pre-AVX2 CPUs (e.g. Ivy Bridge). CI runners are fine. Locally, build in a throwaway copy with the WASM binding instead: remove that package, unpack `@astrojs/compiler-binding-wasm32-wasi` (same version) into `node_modules`, and set `NAPI_RS_FORCE_WASI=1`. Never commit the WASM binding to the lockfile.
+
+- **Site whitespace**: `site/astro.config.mjs` sets `compressHTML: true`. Astro 7's default (`'jsx'`) drops the space between inline elements written on separate lines (e.g. `reference: <a>` renders as `reference:<a>`).
+
 ## Environment
 
 - **Dev credentials**: `admin` / `admin123` (set in `dev/docker-compose.yaml` env block).
