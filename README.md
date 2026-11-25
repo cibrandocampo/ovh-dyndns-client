@@ -128,6 +128,23 @@ docker compose up -d
 
 Default credentials: `admin` / `admin` (password change required on first login)
 
+### Installation recommendations
+
+The client only needs outbound access (to the public IP service and OVH). The web UI serves plain HTTP, so keep it off the internet unless it sits behind HTTPS:
+
+- **Keep it on your LAN.** If you do not need remote access, do not forward the port on your router. To accept connections only from the host itself (for example, when a reverse proxy runs there), publish the port on localhost: `"127.0.0.1:${API_PORT:-8000}:${API_PORT:-8000}"`.
+- **Use a reverse proxy with a TLS certificate for remote access.** Put Caddy, Traefik or nginx (with Let's Encrypt) in front of the container and expose only the HTTPS port. Over plain HTTP the login password and the session token travel unencrypted. A minimal Caddyfile:
+
+  ```
+  dyndns.example.com {
+      reverse_proxy localhost:8000
+  }
+  ```
+
+- **Set your own admin password before the first start.** The `admin` / `admin` default is replaced on first login, but whoever logs in first chooses the new password. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env` before running `docker compose up` for the first time; they are only read when the admin user is created.
+- **Login rate limits are per client IP.** Behind a reverse proxy every request comes from the proxy's IP, so the limit of 5 logins per minute is shared by all clients.
+- **Back up the data directory.** It holds the database and the generated keys (`.jwt_secret`, `.encryption_key`). Without `.encryption_key` the stored OVH passwords cannot be decrypted.
+
 ---
 
 ## Quality
