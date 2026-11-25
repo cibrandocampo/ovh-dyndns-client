@@ -13,6 +13,8 @@
 
 - **Decision**: JWTs carry a `pwd` claim (short SHA-256 of the user's bcrypt hash), checked on every request. **Why**: revoke all tokens on password change without a DB schema change (the project has no migration tool, only `create_all`). bcrypt re-salts on every change, so even re-setting the same password revokes old tokens. **Date**: 2026-11.
 
+- **Decision**: every response except Swagger UI/ReDoc carries a strict `Content-Security-Policy` (`'self'` only, see `src/api/main.py`). **Why**: limits the damage of any future XSS, since the JWT lives in `localStorage`. **How to apply**: the dashboard must not use inline `<script>`, `<style>`, `style="..."` or `onclick`-style attributes; row buttons use `data-action` handled by a delegated listener in `app.js`. `e2e/tests/csp.spec.js` fails on any violation. **Date**: 2026-11.
+
 ## Gotchas
 
 - **Dev compose file extension**: the dev stack uses `.yaml` (not `.yml`): `dev/docker-compose.yaml`. Commands that use `.yml` will fail silently or fall back to the prod compose.
@@ -32,6 +34,10 @@
 - **Site build on old CPUs**: Astro 7 compiles `.astro` files with a native Rust binary (`@astrojs/compiler-binding-linux-x64-gnu`) that dies with `Illegal instruction` on pre-AVX2 CPUs (e.g. Ivy Bridge). CI runners are fine. Locally, build in a throwaway copy with the WASM binding instead: remove that package, unpack `@astrojs/compiler-binding-wasm32-wasi` (same version) into `node_modules`, and set `NAPI_RS_FORCE_WASI=1`. Never commit the WASM binding to the lockfile.
 
 - **Site whitespace**: `site/astro.config.mjs` sets `compressHTML: true`. Astro 7's default (`'jsx'`) drops the space between inline elements written on separate lines (e.g. `reference: <a>` renders as `reference:<a>`).
+
+- **E2E image bakes in the tests**: `e2e/Dockerfile` copies `e2e/` at build time, so rebuild `ovh-dyndns-e2e` after changing any spec, or the run uses stale tests.
+
+- **E2E hosts accumulate**: specs create hosts with fake credentials and do not delete them, and every pending host is sent to the real OVH on each update. Never let an E2E test trigger a real update (mock `/api/status/trigger` with `page.route`); a real one takes from seconds to minutes.
 
 ## Environment
 
