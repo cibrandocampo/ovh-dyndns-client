@@ -15,6 +15,7 @@
 | `ENCRYPTION_KEY` | auto-generated and persisted at `data/.encryption_key` | Fernet key (44-byte base64) used to encrypt OVH host passwords at rest. Auto-generated on first start. **Losing this file with encrypted hosts in the database makes those credentials unrecoverable.** |
 | `ADMIN_USERNAME` | `admin` | Default admin username |
 | `ADMIN_PASSWORD` | `admin` | Default admin password (must be changed on first login) |
+| `FORWARDED_ALLOW_IPS` | `127.0.0.1,::1` | Reverse proxy addresses (IPs or CIDR ranges, comma-separated) trusted to send `X-Forwarded-For`. Needed for per-client rate limits behind a proxy; see [Behind a reverse proxy](#behind-a-reverse-proxy). |
 | `LOGGER_NAME` | `ovh-dyndns` | Logger name |
 | `LOGGER_LEVEL` | `INFO` | Initial log level |
 
@@ -198,11 +199,33 @@ each minute window.
 The implementation uses `slowapi` with in-memory storage. Counters also
 reset whenever the container restarts.
 
-**Reverse proxy note**: when running behind a reverse proxy (nginx, Traefik),
-the limiter sees the proxy's IP as the source. Configure the proxy to
-forward the real client IP via `X-Forwarded-For` and adapt the limiter
-`key_func` if you need accurate per-client limits. (Out of scope for the
-current release.)
+### Behind a reverse proxy
+
+Limits are counted per client IP. Behind a reverse proxy every connection
+comes from the proxy, so by default all clients share one bucket and a
+single client failing logins can lock everyone out for a minute.
+
+To limit each client separately, set `FORWARDED_ALLOW_IPS` in `.env` to the
+address the proxy connects from (comma-separated IPs or CIDR ranges). The
+server then takes the client IP from the `X-Forwarded-For` header, but only
+for requests coming from those addresses:
+
+| Proxy setup | Requests arrive from | Example value |
+|-------------|----------------------|---------------|
+| Proxy on the Docker host, port published on `127.0.0.1` | the gateway of the container's Docker network | `172.18.0.1` |
+| Proxy in a container on the same Docker network | the proxy container | `172.18.0.0/16` (the network's subnet) |
+
+Find the gateway and subnet with
+`docker network inspect <network> --format '{{json .IPAM.Config}}'`.
+
+- The proxy must send `X-Forwarded-For`. Caddy and Traefik do it by
+  default; nginx needs
+  `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`.
+- Trust only the proxy. Any client that can reach the port directly from a
+  trusted address can set its own `X-Forwarded-For` and bypass the limit.
+  Avoid `*` unless the port is reachable by the proxy alone.
+- The default, `127.0.0.1,::1`, only matters when the proxy shares the
+  container's network namespace (e.g. `network_mode: host`).
 
 ## Security Recommendations
 

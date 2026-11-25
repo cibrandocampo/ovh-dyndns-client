@@ -142,7 +142,7 @@ The client only needs outbound access (to the public IP service and OVH). The we
   ```
 
 - **Set your own admin password before the first start.** The `admin` / `admin` default is replaced on first login, but whoever logs in first chooses the new password. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env` before running `docker compose up` for the first time; they are only read when the admin user is created.
-- **Login rate limits are per client IP.** Behind a reverse proxy every request comes from the proxy's IP, so the limit of 5 logins per minute is shared by all clients.
+- **Tell the app which proxy to trust.** Login rate limits are per client IP. Behind a reverse proxy every request comes from the proxy's IP, so all clients share the limit of 5 logins per minute unless you set `FORWARDED_ALLOW_IPS` to the proxy's address (see [Behind a reverse proxy](https://github.com/cibrandocampo/ovh-dyndns-client/blob/main/docs/CONFIGURATION.md#behind-a-reverse-proxy)).
 - **Back up the data directory.** It holds the database and the generated keys (`.jwt_secret`, `.encryption_key`). Without `.encryption_key` the stored OVH passwords cannot be decrypted.
 
 ---
