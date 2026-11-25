@@ -13,6 +13,7 @@ import unittest
 
 from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from api.auth import hash_password
 from api.main import create_app
@@ -134,6 +135,61 @@ class TestChangePasswordRateLimit(unittest.TestCase):
             json={"current_password": "wrong", "new_password": "valid-newpw"},
         )
         self.assertEqual(r.status_code, 429)
+
+
+class TestLoginRateLimitBehindProxy(unittest.TestCase):
+    """Per-client limits behind a reverse proxy rely on uvicorn's proxy headers.
+
+    `uvicorn.run()` wraps the app in `ProxyHeadersMiddleware`, trusting the
+    hosts in `FORWARDED_ALLOW_IPS`. The app is wrapped the same way here, with
+    TestClient's peer address (`testclient`) standing in for the proxy.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        cls.temp_db.close()
+        os.environ["DATABASE_PATH"] = cls.temp_db.name
+        os.environ["JWT_SECRET"] = "test-secret-rl-proxy"
+        os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode("utf-8")
+        init_db()
+        cls.app = create_app()
+
+    @classmethod
+    def tearDownClass(cls):
+        os.unlink(cls.temp_db.name)
+
+    def setUp(self):
+        with get_db_session() as db:
+            db.query(History).delete()
+            db.query(User).delete()
+            db.add(User(username="alice", password_hash=hash_password("right-password"), must_change_password=False))
+
+    def _client(self, trusted_hosts: str) -> TestClient:
+        return TestClient(ProxyHeadersMiddleware(self.app, trusted_hosts=trusted_hosts))
+
+    def _login(self, client: TestClient, forwarded_for: str) -> int:
+        return client.post(
+            "/api/auth/login",
+            json={"username": "alice", "password": "wrong"},
+            headers={"X-Forwarded-For": forwarded_for},
+        ).status_code
+
+    def test_trusted_proxy_limits_each_client_separately(self):
+        client = self._client(trusted_hosts="testclient")
+        for _ in range(5):
+            self._login(client, "203.0.113.10")
+
+        self.assertEqual(self._login(client, "203.0.113.10"), 429)
+        self.assertEqual(self._login(client, "198.51.100.20"), 401)
+
+    def test_untrusted_peer_cannot_spoof_its_address(self):
+        """Without trust, a rotating X-Forwarded-For must not open new buckets."""
+        client = self._client(trusted_hosts="10.0.0.1")
+        for i in range(5):
+            self._login(client, f"203.0.113.{i}")
+
+        self.assertEqual(self._login(client, "203.0.113.99"), 429)
 
 
 if __name__ == "__main__":
