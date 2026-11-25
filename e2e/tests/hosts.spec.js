@@ -73,6 +73,23 @@ test.describe('Hosts', () => {
     await expect(page.locator('#hosts-table tbody tr')).toHaveCount(rowsBefore - 1)
   })
 
+  test('edit button opens the modal with that host', async ({ page }) => {
+    const hostname = `e2e-edit-${Date.now()}.example.com`
+    await page.locator('#add-host-btn').click()
+    await page.locator('#host-hostname').fill(hostname)
+    await page.locator('#host-username').fill('e2e-edit-user')
+    await page.locator('#host-password').fill('e2e-password')
+    await page.locator('#host-form button[type="submit"]').click()
+    await expect(page.locator('#host-modal')).not.toBeVisible()
+
+    await page.locator('#hosts-table tbody tr', { hasText: hostname }).locator('[aria-label="Edit host"]').click()
+
+    await expect(page.locator('#host-modal')).toBeVisible()
+    await expect(page.locator('#modal-title')).toHaveText('Edit Host')
+    await expect(page.locator('#host-hostname')).toHaveValue(hostname)
+    await expect(page.locator('#host-username')).toHaveValue('e2e-edit-user')
+  })
+
   test('cancel delete keeps the row', async ({ page }) => {
     // Always add a fresh host to avoid duplicate hostname conflicts
     const hostname = `e2e-cancel-${Date.now()}.example.com`

@@ -24,6 +24,19 @@ limiter = Limiter(key_func=get_remote_address)
 # at module top level via `@limiter.limit(...)` decorators.
 from .routers import auth_router, history_router, hosts_router, settings_router, status_router  # noqa: E402
 
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+}
+
+# The dashboard only loads its own files, so everything else is refused,
+# including inline scripts, styles and event handlers.
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; script-src 'self'; style-src 'self'; "
+    "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+)
+
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
@@ -36,6 +49,17 @@ def create_app() -> FastAPI:
     # `RateLimitExceeded` into a clean HTTP 429 response with retry headers.
     application.state.limiter = limiter
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+    # Swagger UI and ReDoc load assets from a CDN and run inline scripts.
+    docs_paths = {application.docs_url, application.redoc_url, application.swagger_ui_oauth2_redirect_url}
+
+    @application.middleware("http")
+    async def security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers.update(SECURITY_HEADERS)
+        if request.url.path not in docs_paths:
+            response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
+        return response
 
     # Include routers
     application.include_router(auth_router)

@@ -41,12 +41,22 @@ test.describe('Status', () => {
   })
 
   test('trigger update button sends request and shows message', async ({ page }) => {
+    // A real trigger calls OVH for every pending host, which takes from seconds
+    // to minutes. The delay keeps the request in flight long enough to see the
+    // disabled state.
+    let triggered = false
+    await page.route('**/api/status/trigger', async route => {
+      triggered = true
+      await new Promise(resolve => setTimeout(resolve, 500))
+      await route.fulfill({ json: { success: true, message: 'DNS update triggered' } })
+    })
+
     await page.locator('#trigger-update').click()
     // Button disables while updating
     await expect(page.locator('#trigger-update')).toBeDisabled()
-    // Status message appears (success or error depending on hosts configured)
-    await expect(page.locator('#status-message')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('#status-message')).toHaveText('DNS update triggered')
     // Button re-enables after completion
-    await expect(page.locator('#trigger-update')).toBeEnabled({ timeout: 10_000 })
+    await expect(page.locator('#trigger-update')).toBeEnabled()
+    expect(triggered).toBe(true)
   })
 })

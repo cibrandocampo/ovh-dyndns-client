@@ -232,7 +232,7 @@ async function loadStatus() {
                 </td>
                 <td class="col-secondary">${host.last_error ? escapeHtml(host.last_error) : '-'}</td>
                 <td class="col-actions">
-                    <button class="btn-icon btn-icon-done" onclick="forceUpdateHost(statusRows[${i}].hostname)" aria-label="Force update">
+                    <button class="btn-icon btn-icon-done" data-action="force-update" aria-label="Force update">
                         <svg class="icon icon-sm"><use href="/static/icons.svg#i-refresh-cw"/></svg>
                     </button>
                 </td>
@@ -306,10 +306,10 @@ async function loadHosts() {
                 <td class="col-secondary"><time datetime="${host.created_at || ''}" title="${escapeHtml(formatFullTime(host.created_at))}">${escapeHtml(host.created_at ? formatFullTime(host.created_at) : '-')}</time></td>
                 <td class="col-actions">
                     <span class="row-actions">
-                        <button class="btn-icon" onclick="editHost(${host.id})" aria-label="Edit host">
+                        <button class="btn-icon" data-action="edit" aria-label="Edit host">
                             <svg class="icon icon-sm"><use href="/static/icons.svg#i-pencil"/></svg>
                         </button>
-                        <button class="btn-icon btn-icon-delete" onclick="confirmDeleteHost(${host.id}, hostsRows[${i}].hostname)" aria-label="Delete host">
+                        <button class="btn-icon btn-icon-delete" data-action="delete" aria-label="Delete host">
                             <svg class="icon icon-sm"><use href="/static/icons.svg#i-trash-2"/></svg>
                         </button>
                     </span>
@@ -464,17 +464,30 @@ const rowDetailHandlers = {
     },
 };
 
+// Row buttons carry a `data-action` instead of an inline onclick, which the
+// Content-Security-Policy blocks.
+const rowActions = {
+    'force-update': (row) => forceUpdateHost(row.hostname),
+    'edit': (row) => editHost(row.id),
+    'delete': (row) => confirmDeleteHost(row.id, row.hostname),
+};
+
 Object.entries(rowDetailHandlers).forEach(([tableId, cfg]) => {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (!tbody) return;
     tbody.addEventListener('click', (e) => {
-        // Don't intercept row-action buttons or links inside the row.
-        if (e.target.closest('button, a')) return;
         const tr = e.target.closest('tr.tr-clickable');
         if (!tr) return;
         const idx = Number(tr.dataset.idx);
         const row = cfg.source()[idx];
         if (!row) return;
+        const action = e.target.closest('button[data-action]');
+        if (action) {
+            rowActions[action.dataset.action](row);
+            return;
+        }
+        // Don't open the details modal from other buttons or links in the row.
+        if (e.target.closest('button, a')) return;
         openDetailsModal(cfg.title, cfg.items(row));
     });
 });
