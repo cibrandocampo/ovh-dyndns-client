@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 
-from api.auth import BCRYPT_MAX_BYTES, create_access_token, hash_password, password_fingerprint, verify_password
+from api.auth import (
+    BCRYPT_MAX_BYTES,
+    create_access_token,
+    dummy_password_hash,
+    hash_password,
+    password_fingerprint,
+    verify_password,
+)
 from api.dependencies import get_authenticated_user
 from api.main import limiter
 from infrastructure.database import SqliteRepository
@@ -53,8 +60,9 @@ def login(request: Request, payload: LoginRequest):
     """
     repository = SqliteRepository()
     user = repository.get_user_by_username(payload.username)
+    password_hash = user["password_hash"] if user else dummy_password_hash()
 
-    if not user or not verify_password(payload.password, user["password_hash"]):
+    if not verify_password(payload.password, password_hash) or not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",

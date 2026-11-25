@@ -5,8 +5,9 @@ import os
 import tempfile
 import threading
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import bcrypt
 from fastapi.testclient import TestClient
 
 from api.auth import hash_password
@@ -211,6 +212,28 @@ class TestLongPasswords(_ApiTestCase):
             headers=self.auth_header(),
         )
         self.assertEqual(response.status_code, 400)
+
+
+class TestLoginTiming(_ApiTestCase):
+    """Unknown usernames must cost a bcrypt check, or response time reveals which users exist."""
+
+    def _checked_hashes(self, username):
+        with patch("api.auth.bcrypt.checkpw", wraps=bcrypt.checkpw) as checkpw:
+            response = self.client.post("/api/auth/login", json={"username": username, "password": "testpass"})
+        self.assertEqual(response.status_code, 401 if username != "testuser" else 200)
+        return [call.args[1] for call in checkpw.call_args_list]
+
+    def test_unknown_user_runs_a_bcrypt_check_with_the_same_cost(self):
+        real = self._checked_hashes("testuser")
+        unknown = self._checked_hashes("nobody")
+
+        self.assertEqual(len(unknown), 1)
+        self.assertEqual(unknown[0][:7], real[0][:7])  # "$2b$12$": same algorithm and cost factor
+
+    def test_unknown_user_is_rejected_even_if_the_dummy_hash_matched(self):
+        with patch("api.routers.auth.verify_password", return_value=True):
+            response = self.client.post("/api/auth/login", json={"username": "nobody", "password": "anything"})
+        self.assertEqual(response.status_code, 401)
 
 
 class TestPasswordChangeRevokesTokens(_ApiTestCase):
