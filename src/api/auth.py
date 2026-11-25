@@ -1,5 +1,7 @@
+import functools
 import hashlib
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -75,3 +77,13 @@ def get_admin_credentials() -> tuple[str, str]:
     username = os.getenv("ADMIN_USERNAME", "admin")
     password = os.getenv("ADMIN_PASSWORD", "admin")
     return username, password
+
+
+@functools.cache
+def dummy_password_hash() -> str:
+    """Hash of a random password, checked when the username does not exist.
+
+    Running bcrypt for unknown users makes them take as long as real ones,
+    so response time does not reveal which usernames exist.
+    """
+    return hash_password(secrets.token_urlsafe(16))
